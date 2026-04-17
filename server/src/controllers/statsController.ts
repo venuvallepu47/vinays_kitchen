@@ -1,69 +1,81 @@
 import { Request, Response } from 'express';
-import { query } from '../config/db';
+import pool from '../config/db';
 
-export const getProfitLoss = async (req: Request, res: Response) => {
-    const { month, year } = req.query;
+// GET dashboard stats
+export const getDashboardStats = async (req: Request, res: Response) => {
     try {
-        // Total Sales
-        const salesResult = await query(
-            'SELECT COALESCE(SUM(amount), 0) as total_sales FROM sales WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2',
-            [month, year]
-        );
-        
-        // Total Purchases (Stock)
-        const purchasesResult = await query(
-            'SELECT COALESCE(SUM(total_amount), 0) as total_purchases FROM purchases WHERE EXTRACT(MONTH FROM purchase_date) = $1 AND EXTRACT(YEAR FROM purchase_date) = $2',
-            [month, year]
-        );
-        
-        // Total Salaries
-        // This query sums up the calculated salaries for the given month/year based on attendance
-        const attendanceResult = await query(
-            `SELECT w.id, w.salary_per_day,
-                (COUNT(CASE WHEN a.status = 'Present' THEN 1 END) + (COUNT(CASE WHEN a.status = 'Half-day' THEN 1 END) * 0.5)) as total_worked_days
-             FROM workers w
-             LEFT JOIN attendance a ON w.id = a.worker_id AND EXTRACT(MONTH FROM a.date) = $1 AND EXTRACT(YEAR FROM a.date) = $2
-             GROUP BY w.id`,
-            [month, year]
-        );
-        
-        const totalSalaries = attendanceResult.rows.reduce((sum, row) => {
-            return sum + (parseFloat(row.total_worked_days) * parseFloat(row.salary_per_day));
-        }, 0);
+        const today = new Date().toISOString().split('T')[0];
+        const month = new Date().getMonth() + 1;
+        const year = new Date().getFullYear();
 
-        const totalSales = parseFloat(salesResult.rows[0].total_sales);
-        const totalPurchases = parseFloat(purchasesResult.rows[0].total_purchases);
-        const netProfit = totalSales - (totalPurchases + totalSalaries);
+        const [todaySales, monthSales, lowStock, workersPresent] = await Promise.all([
+            pool.query('SELECT COALESCE(SUM(amount),0) AS total FROM sales WHERE date=$1', [today]),
+            pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM sales
+                        WHERE EXTRACT(MONTH FROM date)=$1 AND EXTRACT(YEAR FROM date)=$2`, [month, year]),
+            pool.query(`
+                SELECT COUNT(*) FROM (
+                    SELECT m.id,
+                        COALESCE(SUM(p.quantity),0) - COALESCE(SUM(u.quantity_used),0) AS stock
+                    FROM materials m
+                    LEFT JOIN purchases p ON p.material_id = m.id
+                    LEFT JOIN material_usage u ON u.material_id = m.id
+                    GROUP BY m.id, m.min_stock
+                    HAVING COALESCE(SUM(p.quantity),0) - COALESCE(SUM(u.quantity_used),0) <= m.min_stock
+                ) sub
+            `),
+            pool.query(`SELECT COUNT(*) FROM attendance WHERE date=$1 AND status='Present'`, [today]),
+        ]);
+
+        const recentSales = await pool.query(
+            'SELECT * FROM sales ORDER BY date DESC LIMIT 5'
+        );
+
+        res.json({
+            today_sales: parseFloat(todaySales.rows[0].total),
+            month_sales: parseFloat(monthSales.rows[0].total),
+            low_stock_count: parseInt(lowStock.rows[0].count),
+            workers_present_today: parseInt(workersPresent.rows[0].count),
+            recent_sales: recentSales.rows,
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+};
+
+// GET P&L report for a month
+export const getProfitLoss = async (req: Request, res: Response) => {
+    try {
+        const { month, year } = req.query;
+        const m = month || new Date().getMonth() + 1;
+        const y = year || new Date().getFullYear();
+
+        const [sales, purchases, salaries, expenses] = await Promise.all([
+            pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM sales
+                        WHERE EXTRACT(MONTH FROM date)=$1 AND EXTRACT(YEAR FROM date)=$2`, [m, y]),
+            pool.query(`SELECT COALESCE(SUM(total_amount),0) AS total FROM purchases
+                        WHERE EXTRACT(MONTH FROM purchase_date)=$1 AND EXTRACT(YEAR FROM purchase_date)=$2`, [m, y]),
+            pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM salary_payments
+                        WHERE EXTRACT(MONTH FROM payment_date)=$1 AND EXTRACT(YEAR FROM payment_date)=$2`, [m, y]),
+            pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses
+                        WHERE EXTRACT(MONTH FROM expense_date)=$1 AND EXTRACT(YEAR FROM expense_date)=$2`, [m, y]),
+        ]);
+
+        const totalSales = parseFloat(sales.rows[0].total);
+        const totalPurchases = parseFloat(purchases.rows[0].total);
+        const totalSalaries = parseFloat(salaries.rows[0].total);
+        const totalExpenses = parseFloat(expenses.rows[0].total);
+        const totalCosts = totalPurchases + totalSalaries + totalExpenses;
+        const netProfit = totalSales - totalCosts;
 
         res.json({
             total_sales: totalSales,
             total_purchases: totalPurchases,
             total_salaries: totalSalaries,
+            total_expenses: totalExpenses,
+            total_costs: totalCosts,
             net_profit: netProfit,
-            month,
-            year
         });
-    } catch (error) {
-        console.error('Error calculating P&L:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
-
-export const getDashboardStats = async (req: Request, res: Response) => {
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        
-        const todaySales = await query('SELECT COALESCE(SUM(amount), 0) as amount FROM sales WHERE date = $1', [today]);
-        const lowStockItems = await query('SELECT COUNT(*) FROM (SELECT m.id FROM materials m LEFT JOIN purchases p ON m.id = p.material_id GROUP BY m.id, m.min_stock HAVING COALESCE(SUM(p.quantity), 0) < m.min_stock) as low_stock');
-        const activeWorkers = await query('SELECT COUNT(*) FROM workers');
-        
-        res.json({
-            today_sales: parseFloat(todaySales.rows[0].amount),
-            low_stock_count: parseInt(lowStockItems.rows[0].count),
-            worker_count: parseInt(activeWorkers.rows[0].count)
-        });
-    } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch P&L' });
     }
 };

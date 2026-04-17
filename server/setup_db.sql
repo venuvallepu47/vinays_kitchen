@@ -1,14 +1,29 @@
--- Workers Table
+-- ================================================================
+-- Vinay's Kitchen — Full Database Schema (v2)
+-- Run this against: vinay_db
+-- ================================================================
+
+-- Vendors (Suppliers)
+CREATE TABLE IF NOT EXISTS vendors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    address TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Workers
 CREATE TABLE IF NOT EXISTS workers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     salary_per_day DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     joining_date DATE DEFAULT CURRENT_DATE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Attendance Table
+-- Attendance
 CREATE TABLE IF NOT EXISTS attendance (
     id SERIAL PRIMARY KEY,
     worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
@@ -21,47 +36,66 @@ CREATE TABLE IF NOT EXISTS attendance (
 -- Materials (Inventory Items)
 CREATE TABLE IF NOT EXISTS materials (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    unit VARCHAR(50) NOT NULL, -- kg, ltr, packets, etc.
+    name VARCHAR(255) NOT NULL UNIQUE,
+    unit VARCHAR(50) NOT NULL,
     min_stock DECIMAL(10, 2) DEFAULT 0.00,
+    current_stock DECIMAL(10, 2) DEFAULT 0.00,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Purchases (Stock Intake)
+-- Purchases (Stock Intake from Vendor)
 CREATE TABLE IF NOT EXISTS purchases (
     id SERIAL PRIMARY KEY,
     material_id INTEGER REFERENCES materials(id) ON DELETE CASCADE,
+    vendor_id INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
     quantity DECIMAL(10, 2) NOT NULL,
     price_per_unit DECIMAL(10, 2) NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL,
     purchase_date DATE DEFAULT CURRENT_DATE,
-    supplier_name VARCHAR(255),
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Sales (Daily Revenue)
+-- Material Usage (Daily consumption log)
+CREATE TABLE IF NOT EXISTS material_usage (
+    id SERIAL PRIMARY KEY,
+    material_id INTEGER REFERENCES materials(id) ON DELETE CASCADE,
+    quantity_used DECIMAL(10, 2) NOT NULL,
+    usage_date DATE DEFAULT CURRENT_DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Daily Counter Sales
 CREATE TABLE IF NOT EXISTS sales (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     amount DECIMAL(10, 2) NOT NULL,
-    description TEXT, -- e.g., "Morning Breakfast", "Lunch Parcel"
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Salary Payouts
-CREATE TABLE IF NOT EXISTS salaries (
+-- Salary Payments (flexible daily payments)
+CREATE TABLE IF NOT EXISTS salary_payments (
     id SERIAL PRIMARY KEY,
     worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
-    month INTEGER NOT NULL,
-    year INTEGER NOT NULL,
-    total_days_worked DECIMAL(5, 2) NOT NULL,
-    amount_paid DECIMAL(10, 2) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
     payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(worker_id, month, year)
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Users (Security/Auth)
+-- Expenses (Rent, Electricity, Misc)
+CREATE TABLE IF NOT EXISTS expenses (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(100) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Users (Auth)
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -77,3 +111,8 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Default admin user
+INSERT INTO users (email, password_hash, name)
+VALUES ('admin@vinayskitchen.com', 'admin123', 'Vinay Admin')
+ON CONFLICT (email) DO NOTHING;

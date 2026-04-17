@@ -1,135 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, ArrowDown, ArrowUp, Calendar, Filter, Download } from 'lucide-react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { formatCurrency } from '../utils/format';
+import { cn } from '../utils/cn';
+import api from '../utils/api';
 
-const Reports = () => {
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+export function Reports() {
+    const now = new Date();
+    const [month, setMonth] = useState(now.getMonth() + 1);
+    const [year, setYear] = useState(now.getFullYear());
     const [report, setReport] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [month, setMonth] = useState(new Date().getMonth() + 1);
-    const [year, setYear] = useState(new Date().getFullYear());
+    const [loading, setLoading] = useState(false);
 
     const fetchReport = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`http://localhost:5000/api/stats/profit-loss?month=${month}&year=${year}`);
+            const res = await api.get(`/stats/profit-loss?month=${month}&year=${year}`);
             setReport(res.data);
-        } catch (err) {
-            console.error('Error fetching P&L report', err);
-        } finally {
-            setLoading(false);
-        }
+        } catch { } finally { setLoading(false); }
     };
 
-    useEffect(() => {
-        fetchReport();
-    }, [month, year]);
+    useEffect(() => { fetchReport(); }, [month, year]);
 
-    const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
+    const isProfitable = (report?.net_profit || 0) >= 0;
 
-    if (loading) return <div>Loading reports...</div>;
-
-    const netProfit = report?.net_profit || 0;
-    const isProfitable = netProfit >= 0;
-
-    return (
-        <div className="animate-fade">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.875rem' }}>Financial Reports (P&L)</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Detailed breakdown of revenue, expenses, and net profit.</p>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <select 
-                        value={month} 
-                        onChange={(e) => setMonth(parseInt(e.target.value))}
-                        className="glass"
-                        style={{ width: 'auto', fontWeight: 600 }}
-                    >
-                        {months.map((m, i) => (
-                            <option key={m} value={i + 1}>{m}</option>
-                        ))}
-                    </select>
-                    <select 
-                        value={year} 
-                        onChange={(e) => setYear(parseInt(e.target.value))}
-                        className="glass"
-                        style={{ width: 'auto', fontWeight: 600 }}
-                    >
-                        {[2024, 2025, 2026].map(y => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
-                    <button className="btn-primary" style={{ background: 'var(--secondary)' }}>
-                        <Download size={18} />
-                        Export
-                    </button>
+    const ExpenseRow = ({ label, amount, pct }: { label: string; amount: number; pct: number }) => (
+        <div className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0">
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-800">{label}</p>
+                <div className="mt-1.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-danger-400 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
                 </div>
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                <div className="card" style={{ borderLeft: '4px solid var(--success)' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Total Sales (Income)</p>
-                    <h2 style={{ color: 'var(--success)' }}>₹{report?.total_sales?.toLocaleString() || 0}</h2>
-                </div>
-                <div className="card" style={{ borderLeft: '4px solid var(--danger)' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Total Expenses</p>
-                    <h2 style={{ color: 'var(--danger)' }}>₹{( (report?.total_purchases || 0) + (report?.total_salaries || 0) ).toLocaleString()}</h2>
-                </div>
-                <div className="card" style={{ 
-                    background: isProfitable ? '#f0fdf4' : '#fef2f2',
-                    borderLeft: `4px solid ${isProfitable ? 'var(--success)' : 'var(--danger)'}`
-                }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Net Profit</p>
-                    <h2 style={{ color: isProfitable ? 'var(--success)' : 'var(--danger)' }}>₹{netProfit.toLocaleString()}</h2>
-                </div>
-            </div>
-
-            <div className="card">
-                <h3 style={{ marginBottom: '1.5rem' }}>Expense Breakdown</h3>
-                <div className="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Category</th>
-                                <th>Details</th>
-                                <th>Amount</th>
-                                <th>% of Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style={{ fontWeight: 600 }}>Raw Materials (Stock)</td>
-                                <td>Inventory purchases for the month</td>
-                                <td style={{ fontWeight: 700 }}>₹{report?.total_purchases?.toLocaleString() || 0}</td>
-                                <td>{report?.total_sales ? ((report.total_purchases / report.total_sales) * 100).toFixed(1) : 0}%</td>
-                            </tr>
-                            <tr>
-                                <td style={{ fontWeight: 600 }}>Worker Salaries</td>
-                                <td>Based on attendance logs</td>
-                                <td style={{ fontWeight: 700 }}>₹{report?.total_salaries?.toLocaleString() || 0}</td>
-                                <td>{report?.total_sales ? ((report.total_salaries / report.total_sales) * 100).toFixed(1) : 0}%</td>
-                            </tr>
-                            <tr style={{ background: '#f8fafc' }}>
-                                <td colSpan={2} style={{ fontWeight: 700, textAlign: 'right' }}>Total Expenses</td>
-                                <td style={{ fontWeight: 800, color: 'var(--danger)' }}>₹{( (report?.total_purchases || 0) + (report?.total_salaries || 0) ).toLocaleString()}</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div style={{ marginTop: '2.5rem' }} className="card glass">
-                <h3 style={{ marginBottom: '1rem' }}>Historical Performance</h3>
-                <div style={{ height: '300px', width: '100%', background: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border)' }}>
-                    <p style={{ color: 'var(--text-muted)' }}>Interactive P&L Chart Coming Soon (Recharts Integration)</p>
-                </div>
+            <div className="text-right shrink-0">
+                <p className="text-sm font-black text-slate-700">{formatCurrency(amount)}</p>
+                <p className="text-[10px] text-slate-400">{pct.toFixed(1)}%</p>
             </div>
         </div>
     );
-};
 
-export default Reports;
+    return (
+        <div className="pb-24">
+            <div className="px-4 pt-4 pb-3">
+                {/* Month/Year Selector */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex gap-3">
+                    <select
+                        value={month}
+                        onChange={e => setMonth(parseInt(e.target.value))}
+                        className="flex-1 h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                    >
+                        {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                    </select>
+                    <select
+                        value={year}
+                        onChange={e => setYear(parseInt(e.target.value))}
+                        className="w-28 h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                    >
+                        {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex items-center justify-center py-20">
+                    <div className="w-8 h-8 border-2 border-primary-500/30 border-t-primary-600 rounded-full animate-spin" />
+                </div>
+            ) : report && (
+                <div className="px-4 space-y-4">
+                    {/* Net Profit Hero */}
+                    <div className={cn('rounded-2xl p-6 text-center', isProfitable ? 'bg-success-50 border border-success-200' : 'bg-danger-50 border border-danger-200')}>
+                        <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3', isProfitable ? 'bg-success-100' : 'bg-danger-100')}>
+                            {isProfitable
+                                ? <TrendingUp size={24} className="text-success-600" />
+                                : <TrendingDown size={24} className="text-danger-600" />
+                            }
+                        </div>
+                        <p className={cn('text-[11px] font-bold uppercase tracking-widest mb-1', isProfitable ? 'text-success-600' : 'text-danger-600')}>
+                            Net {isProfitable ? 'Profit' : 'Loss'}
+                        </p>
+                        <p className={cn('text-4xl font-black', isProfitable ? 'text-success-800' : 'text-danger-800')}>
+                            {formatCurrency(Math.abs(report.net_profit))}
+                        </p>
+                    </div>
+
+                    {/* Revenue vs Cost */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                            <p className="text-[10px] font-bold text-success-600 uppercase tracking-widest mb-1">Revenue</p>
+                            <p className="text-xl font-black text-slate-900">{formatCurrency(report.total_sales)}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">counter sales</p>
+                        </div>
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                            <p className="text-[10px] font-bold text-danger-600 uppercase tracking-widest mb-1">Total Costs</p>
+                            <p className="text-xl font-black text-slate-900">{formatCurrency(report.total_costs)}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">all expenses</p>
+                        </div>
+                    </div>
+
+                    {/* Expense Breakdown */}
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <BarChart3 size={16} className="text-slate-400" />
+                            <p className="text-sm font-bold text-slate-900">Expense Breakdown</p>
+                        </div>
+                        {report.total_sales > 0 ? (
+                            <>
+                                <ExpenseRow label="Raw Materials (Stock)" amount={report.total_purchases} pct={report.total_sales ? (report.total_purchases / report.total_sales) * 100 : 0} />
+                                <ExpenseRow label="Salary Payments" amount={report.total_salaries} pct={report.total_sales ? (report.total_salaries / report.total_sales) * 100 : 0} />
+                                <ExpenseRow label="Rent & Other Expenses" amount={report.total_expenses} pct={report.total_sales ? (report.total_expenses / report.total_sales) * 100 : 0} />
+                            </>
+                        ) : (
+                            <p className="text-sm text-slate-400 text-center py-4">No sales data for this period</p>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

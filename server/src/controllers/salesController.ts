@@ -1,38 +1,60 @@
 import { Request, Response } from 'express';
-import { query } from '../config/db';
+import pool from '../config/db';
 
-// Daily Sales Management
+// GET all sales
 export const getSales = async (req: Request, res: Response) => {
     try {
-        const result = await query('SELECT * FROM sales ORDER BY date DESC');
+        const { month, year } = req.query;
+        let query = 'SELECT * FROM sales';
+        const params: any[] = [];
+        if (month && year) {
+            query += ' WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2';
+            params.push(month, year);
+        }
+        query += ' ORDER BY date DESC';
+        const result = await pool.query(query, params);
         res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching sales:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch sales' });
     }
 };
 
-export const createSales = async (req: Request, res: Response) => {
-    const { date, amount, description } = req.body;
+// POST create sale
+export const createSale = async (req: Request, res: Response) => {
     try {
-        const result = await query(
-            'INSERT INTO sales (date, amount, description) VALUES ($1, $2, $3) RETURNING *',
-            [date, amount, description]
+        const { date, amount, notes } = req.body;
+        const result = await pool.query(
+            'INSERT INTO sales (date, amount, notes) VALUES ($1, $2, $3) RETURNING *',
+            [date || new Date(), amount, notes]
         );
         res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error('Error creating sales record:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create sale' });
     }
 };
 
-export const deleteSales = async (req: Request, res: Response) => {
-    const { id } = req.params;
+// PUT update sale
+export const updateSale = async (req: Request, res: Response) => {
     try {
-        await query('DELETE FROM sales WHERE id = $1', [id]);
-        res.json({ message: 'Sales record deleted' });
-    } catch (error) {
-        console.error('Error deleting sales record:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        const { id } = req.params;
+        const { date, amount, notes } = req.body;
+        const result = await pool.query(
+            'UPDATE sales SET date=$1, amount=$2, notes=$3 WHERE id=$4 RETURNING *',
+            [date, amount, notes, id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update sale' });
+    }
+};
+
+// DELETE sale
+export const deleteSale = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM sales WHERE id=$1', [id]);
+        res.json({ message: 'Sale deleted' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete sale' });
     }
 };

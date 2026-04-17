@@ -14,6 +14,7 @@ export const getVendors = async (req: Request, res: Response) => {
         `);
         res.json(result.rows);
     } catch (err) {
+        console.error("GET /vendors error:", err);
         res.status(500).json({ error: 'Failed to fetch vendors' });
     }
 };

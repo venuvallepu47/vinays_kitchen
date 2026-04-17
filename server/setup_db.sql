@@ -3,6 +3,18 @@
 -- Run this against: vinay_db
 -- ================================================================
 
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS expenses CASCADE;
+DROP TABLE IF EXISTS salary_payments CASCADE;
+DROP TABLE IF EXISTS sales CASCADE;
+DROP TABLE IF EXISTS material_usage CASCADE;
+DROP TABLE IF EXISTS purchases CASCADE;
+DROP TABLE IF EXISTS materials CASCADE;
+DROP TABLE IF EXISTS attendance CASCADE;
+DROP TABLE IF EXISTS workers CASCADE;
+DROP TABLE IF EXISTS vendors CASCADE;
+
 -- Vendors (Suppliers)
 CREATE TABLE IF NOT EXISTS vendors (
     id SERIAL PRIMARY KEY,
@@ -111,6 +123,20 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for Performance
+CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
+CREATE INDEX IF NOT EXISTS idx_purchases_material_id ON purchases(material_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_vendor_id ON purchases(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_date ON purchases(purchase_date);
+CREATE INDEX IF NOT EXISTS idx_material_usage_material_id ON material_usage(material_id);
+CREATE INDEX IF NOT EXISTS idx_material_usage_date ON material_usage(usage_date);
+CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);
+CREATE INDEX IF NOT EXISTS idx_salary_payments_worker_id ON salary_payments(worker_id);
+CREATE INDEX IF NOT EXISTS idx_salary_payments_date ON salary_payments(payment_date);
+CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date);
+CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
+CREATE INDEX IF NOT EXISTS idx_workers_is_active ON workers(is_active);
 
 -- Default admin user
 INSERT INTO users (email, password_hash, name)

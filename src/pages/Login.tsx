@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,6 +10,7 @@ export function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,6 +19,7 @@ export function Login() {
         await new Promise(r => setTimeout(r, 400));
         if (email === 'admin@vinayskitchen.com' && password === 'admin123') {
             login({ email, name: "Vinay Admin" });
+            navigate('/');
         } else {
             setError('Invalid email or password. Please try again.');
         }

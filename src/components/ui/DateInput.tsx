@@ -31,10 +31,8 @@ export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
 
             // Initialize Flatpickr
             fpInstance.current = window.flatpickr(inputRef.current, {
-                disableMobile: true, // Force the premium custom UI on all devices
-                altInput: true,      // Show a human-friendly format
-                altFormat: "F j, Y", // e.g., April 18, 2026
-                dateFormat: "Y-m-d", // Value remains standard YYYY-MM-DD
+                disableMobile: true,
+                dateFormat: "Y-m-d",
                 animate: true,
                 defaultDate: value || undefined,
                 onChange: (_selectedDates: Date[], dateStr: string) => {

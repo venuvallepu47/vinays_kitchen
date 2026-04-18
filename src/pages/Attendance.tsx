@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { useToast } from '../contexts/ToastContext';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, ShoppingBag, Trash2, Pencil, Filter, X, Calendar } from 'lucide-react';
+import { Plus, Search, ShoppingBag, Trash2, Pencil } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { ListSkeleton } from '../components/ui/Skeleton';
 import { Modal } from '../components/ui/Modal';
@@ -58,12 +58,6 @@ export function Sales() {
     }, [filterType, filterMonth, filterYear, filterDate, toast]);
 
     useEffect(() => { fetchSales(); }, [fetchSales]);
-
-    const clearFilters = () => {
-        setFilterType('all');
-        setFilterMethod('all');
-        navigate('/sales', { replace: true });
-    };
 
     const openAdd = () => { setForm({ date: today(), cash_amount: '', upi_amount: '', notes: '' }); setEditing(null); setShowAdd(true); };
     const openEdit = (sale: any) => { 

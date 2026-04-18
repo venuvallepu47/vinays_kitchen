@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, CalendarCheck, Banknote } from 'lucide-react';
+import { Pencil, Trash2, CalendarCheck, Banknote } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
@@ -104,9 +104,6 @@ export function WorkerProfile() {
     const paidThisMonth = parseFloat(stats?.paid_this_month || 0);
     const earned = daysWorked * parseFloat(worker.salary_per_day);
     const balance = earned - paidThisMonth;
-
-    const inputCls = "w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500";
-    const labelCls = "text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block";
 
     return (
         <div className="h-dvh bg-slate-50 flex flex-col max-w-md mx-auto shadow-xl overflow-hidden">

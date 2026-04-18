@@ -1,7 +1,11 @@
 import { defineConfig } from 'vite'
+// @ts-ignore
 import react from '@vitejs/plugin-react'
+// @ts-ignore
 import tailwindcss from '@tailwindcss/vite'
+// @ts-ignore
 import { VitePWA } from 'vite-plugin-pwa'
+// @ts-ignore
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({

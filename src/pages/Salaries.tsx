@@ -1,10 +1,10 @@
 import { Banknote, Pencil, Trash2, Calendar, User, Search, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { formatCurrency, formatDate, today } from '../utils/format';
 import { useToast } from '../contexts/ToastContext';
-import { cn } from '../utils/cn';
 import api from '../utils/api';
 
 export function Salaries() {
@@ -78,9 +78,6 @@ export function Salaries() {
     });
 
     const totalPaid = filtered.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-
-    const inputCls = "w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500";
-    const labelCls = "text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block";
 
     return (
         <div className="space-y-4">

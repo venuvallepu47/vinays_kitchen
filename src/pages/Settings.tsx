@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Building, Info, Package, DollarSign, X, Plus } from 'lucide-react';
+import { Building, Info, Package, DollarSign, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import api from '../utils/api';
 

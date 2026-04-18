@@ -2,18 +2,20 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables based on NODE_ENV
-const envPath = process.env.NODE_ENV === 'production' 
-  ? '../../.env.production' 
-  : '../../.env';
-dotenv.config({ path: path.resolve(__dirname, envPath) });
+// Load environment variables
+dotenv.config(); // Try root .env
+dotenv.config({ path: path.resolve(process.cwd(), '.env.production') });
+dotenv.config({ path: path.resolve(process.cwd(), 'server/.env.production') });
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
+  // prioritize system environment variables (Render Dashboard)
+  host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'vinay_db',
-  user: process.env.DB_USER || 'venuvallepu',
-  password: process.env.DB_PASSWORD || 'venu',
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  // Ensure SSL is used for Render/External DBs if required
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // Test connection and set timezone

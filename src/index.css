@@ -116,70 +116,116 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 
-  /* --- Premium Flatpickr Theme (Industry-Grade) --- */
+  /* --- Premium Flatpickr Theme (Industry-Grade Stabilization) --- */
   .flatpickr-calendar {
-    @apply rounded-3xl border-none shadow-2xl bg-white/95 backdrop-blur-xl animate-fade-in;
+    border-radius: 1.5rem !important;
+    border: none !important;
+    box-shadow: var(--shadow-2xl) !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(24px) !important;
+    animation: fadeIn 0.2s ease-out !important;
     width: 320px;
     margin-top: 8px;
   }
 
   .flatpickr-months {
-    @apply pt-4 pb-2 px-2;
+    padding: 1rem 0.5rem 0.5rem 0.5rem !important;
   }
 
   .flatpickr-month {
-    @apply h-10 select-none;
+    height: 2.5rem !important;
+    user-select: none;
   }
 
   .flatpickr-current-month {
-    @apply text-sm font-black text-slate-800 uppercase tracking-widest pt-2;
+    font-size: 0.875rem !important;
+    font-weight: 900 !important;
+    color: var(--color-slate-800) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding-top: 0.5rem !important;
   }
 
   .flatpickr-monthDropdown-months {
-    @apply !font-black !text-slate-800 !hover:bg-slate-50 !rounded-lg !transition-colors;
+    font-weight: 900 !important;
+    color: var(--color-slate-800) !important;
+    border-radius: 0.5rem !important;
+    transition: background-color 0.2s, color 0.2s !important;
+  }
+
+  .flatpickr-monthDropdown-months:hover {
+    background-color: var(--color-slate-50) !important;
   }
 
   .flatpickr-weekday {
-    @apply !text-[10px] !font-black !text-slate-400 !uppercase !tracking-widest;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    color: var(--color-slate-400) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
   }
 
   .flatpickr-day {
-    @apply !rounded-xl !font-bold !text-slate-700 !transition-all;
-    height: 40px;
-    line-height: 40px;
-    margin: 2px;
+    border-radius: 0.75rem !important;
+    font-weight: 700 !important;
+    color: var(--color-slate-700) !important;
+    transition: all 0.2s !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    margin: 2px !important;
   }
 
   .flatpickr-day.today {
-    @apply !border-2 !border-primary-200 !text-primary-700;
+    border: 2px solid var(--color-primary-200) !important;
+    color: var(--color-primary-700) !important;
   }
 
   .flatpickr-day.selected,
   .flatpickr-day.selected:hover {
-    @apply !bg-primary-600 !border-none !text-white !shadow-lg !shadow-primary-500/20 !scale-110 !z-10;
+    background-color: var(--color-primary-600) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2) !important;
+    transform: scale(1.1) !important;
+    z-index: 10 !important;
   }
 
   .flatpickr-day:hover {
-    @apply !bg-slate-50 !text-slate-900 !border-none;
+    background-color: var(--color-slate-50) !important;
+    color: var(--color-slate-900) !important;
+    border: none !important;
   }
 
   .flatpickr-day.prevMonthDay,
   .flatpickr-day.nextMonthDay {
-    @apply !text-slate-300 !opacity-50;
+    color: var(--color-slate-300) !important;
+    opacity: 0.5 !important;
   }
 
   /* Navigation Arrows */
   .flatpickr-prev-month, .flatpickr-next-month {
-    @apply !h-10 !w-10 !flex !items-center !justify-center !rounded-xl !hover:bg-slate-50 !transition-colors;
+    height: 2.5rem !important;
+    width: 2.5rem !important;
+    display: flex !important;
+    items-center: center !important;
+    justify-content: center !important;
+    border-radius: 0.75rem !important;
+    transition: background-color 0.2s !important;
     padding: 0 !important;
   }
 
+  .flatpickr-prev-month:hover, .flatpickr-next-month:hover {
+    background-color: var(--color-slate-50) !important;
+  }
+
   .flatpickr-prev-month svg, .flatpickr-next-month svg {
-    @apply fill-slate-400 scale-90 transition-colors;
+    fill: var(--color-slate-400) !important;
+    transform: scale(0.9) !important;
+    transition: fill 0.2s !important;
   }
 
   .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg {
-    @apply fill-primary-600;
+    fill: var(--color-primary-600) !important;
   }
 }
 

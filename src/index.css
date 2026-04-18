@@ -123,7 +123,7 @@
 
   /* --- Premium Flatpickr Theme (Industry-Grade) --- */
   .flatpickr-calendar {
-    @apply rounded-3xl border-none shadow-2xl bg-white/95 backdrop-blur-xl animate-in fade-in zoom-in duration-200;
+    @apply rounded-3xl border-none shadow-2xl bg-white/95 backdrop-blur-xl animate-fade-in;
     width: 320px;
     margin-top: 8px;
   }

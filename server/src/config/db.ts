@@ -15,7 +15,7 @@ const possiblePaths = [
 let loaded = false;
 for (const envPath of possiblePaths) {
   if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath, override: true });
+    dotenv.config({ path: envPath });
     console.log(`[DB] Loaded env from: ${envPath}`);
     loaded = true;
     break;

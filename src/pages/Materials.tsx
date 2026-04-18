@@ -96,7 +96,7 @@ export function Materials() {
         setSaving(true);
         try {
             // Group items by vendor_id
-            const vendorGroups = valid.reduce((acc: any, it) => {
+            const vendorGroups = valid.reduce((acc: Record<string, StockItem[]>, it) => {
                 const vid = it.vendor_id || 'unlinked';
                 if (!acc[vid]) acc[vid] = [];
                 acc[vid].push(it);

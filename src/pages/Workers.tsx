@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Users, Phone, Pencil, Trash2, Calendar, Wallet } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';

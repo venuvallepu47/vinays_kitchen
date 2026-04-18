@@ -47,14 +47,14 @@ function PaymentModeChips({ value, onChange }: { value: string; onChange: (v: st
     );
 }
 
-function BillCard({ bill, onEdit, onDelete }: { bill: Bill; onEdit: () => void; onDelete: () => void }) {
+function BillCard({ bill, onEdit, onDelete, ...props }: { bill: Bill; onEdit: () => void; onDelete: () => void } & React.HTMLAttributes<HTMLDivElement>) {
     const [expanded, setExpanded] = useState(false);
     const total = parseFloat(bill.total_amount);
     const paid = parseFloat(bill.paid_amount || '0');
     const balance = total - paid;
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div {...props} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <button type="button" onClick={() => setExpanded(e => !e)}
                 className="w-full text-left p-4 active:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3">

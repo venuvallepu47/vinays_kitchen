@@ -1,3 +1,4 @@
+import React from 'react';
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { useToast, type ToastItem } from '../../contexts/ToastContext';
 import { cn } from '../../utils/cn';
@@ -9,12 +10,13 @@ const CONFIG = {
     info:    { icon: Info,          containerClass: 'bg-white border-l-4 border-primary-500', iconClass: 'text-primary-500', msgClass: 'text-primary-700' },
 } as const;
 
-function ToastCard({ toast }: { toast: ToastItem }) {
+function ToastCard({ toast, ...props }: { toast: ToastItem } & React.HTMLAttributes<HTMLDivElement>) {
     const { dismiss } = useToast();
     const cfg = CONFIG[toast.type];
     const Icon = cfg.icon;
     return (
         <div
+            {...props}
             className={cn('flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg max-w-[360px] w-full pointer-events-auto', cfg.containerClass)}
             style={{ animation: 'toastSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
             role="alert"

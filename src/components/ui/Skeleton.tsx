@@ -1,7 +1,8 @@
+import React from 'react';
 import { cn } from '../../utils/cn';
 
-export function SkeletonBlock({ className }: { className?: string }) {
-    return <div className={cn('animate-shimmer rounded-xl', className)} />;
+export function SkeletonBlock({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+    return <div {...props} className={cn('animate-shimmer rounded-xl', className)} />;
 }
 
 export function DashboardSkeleton() {

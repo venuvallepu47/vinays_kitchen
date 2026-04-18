@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
 
-// GET all vendors
+// GET all vendors with outstanding balance
 export const getVendors = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT v.*,
-                COALESCE(SUM(p.total_amount), 0) AS total_purchased
+                COALESCE((SELECT SUM(vb.total_amount) FROM vendor_bills vb WHERE vb.vendor_id = v.id), 0) AS total_credit,
+                COALESCE((SELECT SUM(vb.paid_amount) FROM vendor_bills vb WHERE vb.vendor_id = v.id), 0) +
+                COALESCE((SELECT SUM(vp.amount) FROM vendor_payments vp WHERE vp.vendor_id = v.id), 0) AS total_paid,
+                COALESCE((SELECT SUM(vb.total_amount) FROM vendor_bills vb WHERE vb.vendor_id = v.id), 0) -
+                COALESCE((SELECT SUM(vb.paid_amount) FROM vendor_bills vb WHERE vb.vendor_id = v.id), 0) -
+                COALESCE((SELECT SUM(vp.amount) FROM vendor_payments vp WHERE vp.vendor_id = v.id), 0) AS outstanding
             FROM vendors v
-            LEFT JOIN purchases p ON p.vendor_id = v.id
-            GROUP BY v.id
             ORDER BY v.created_at DESC
         `);
         res.json(result.rows);

@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS materials (
     unit VARCHAR(50) NOT NULL,
     min_stock DECIMAL(10, 2) DEFAULT 0.00,
     current_stock DECIMAL(10, 2) DEFAULT 0.00,
+    conversion_factor DECIMAL(10, 4) DEFAULT NULL,  -- kg per bag / units per carton
+    base_unit VARCHAR(50) DEFAULT NULL,              -- 'kg' for Bags, 'units' for Cartons
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

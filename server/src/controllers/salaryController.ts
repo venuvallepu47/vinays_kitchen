@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
+import { getISTDate } from '../utils/date';
 
 // GET salary payments (optionally by worker)
 export const getSalaryPayments = async (req: Request, res: Response) => {
@@ -29,7 +30,7 @@ export const logSalaryPayment = async (req: Request, res: Response) => {
         const { worker_id, amount, payment_date, notes } = req.body;
         const result = await pool.query(
             'INSERT INTO salary_payments (worker_id, amount, payment_date, notes) VALUES ($1, $2, $3, $4) RETURNING *',
-            [worker_id, amount, payment_date || new Date(), notes]
+            [worker_id, amount, payment_date || getISTDate(), notes]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -45,5 +46,20 @@ export const deleteSalaryPayment = async (req: Request, res: Response) => {
         res.json({ message: 'Payment deleted' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete payment' });
+    }
+};
+
+// PUT update salary payment
+export const updateSalaryPayment = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { amount, payment_date, notes } = req.body;
+        const result = await pool.query(
+            'UPDATE salary_payments SET amount=$1, payment_date=$2, notes=$3 WHERE id=$4 RETURNING *',
+            [amount, payment_date, notes, id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update salary payment' });
     }
 };

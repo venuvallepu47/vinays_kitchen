@@ -32,7 +32,7 @@ export function ToastContainer() {
     const { toasts } = useToast();
     if (toasts.length === 0) return null;
     return (
-        <div aria-live="polite" className="fixed bottom-20 left-0 right-0 z-[200] flex flex-col items-center gap-2 px-4 pointer-events-none">
+        <div aria-live="polite" className="fixed bottom-20 left-0 right-0 z-[250] flex flex-col items-center gap-2 px-4 pointer-events-none">
             {toasts.map(t => <ToastCard key={t.id} toast={t} />)}
         </div>
     );

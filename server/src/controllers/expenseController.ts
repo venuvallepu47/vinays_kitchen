@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
+import { getISTDate } from '../utils/date';
 
 // GET all expenses
 export const getExpenses = async (req: Request, res: Response) => {
@@ -25,7 +26,7 @@ export const createExpense = async (req: Request, res: Response) => {
         const { category, amount, expense_date, notes } = req.body;
         const result = await pool.query(
             'INSERT INTO expenses (category, amount, expense_date, notes) VALUES ($1, $2, $3, $4) RETURNING *',
-            [category, amount, expense_date || new Date(), notes]
+            [category, amount, expense_date || getISTDate(), notes]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {

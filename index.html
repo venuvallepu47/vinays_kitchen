@@ -2,12 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend_temp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- App Title & Description -->
+    <title>Vinay's Kitchen</title>
+    <meta name="description" content="Vinay's Kitchen — Tiffin Shop Management System" />
+    <meta name="application-name" content="Vinay's Kitchen" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/icon-192x192.png" />
+    <link rel="shortcut icon" href="/icon-192x192.png" />
+
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Vinay's Kitchen" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="128x128" href="/icon-128x128.png" />
+
+    <!-- Theme colors -->
+    <meta name="theme-color" content="#f59e0b" />
+    <meta name="msapplication-TileColor" content="#f59e0b" />
+    <meta name="msapplication-TileImage" content="/icon-144x144.png" />
+
+    <!-- Android / Chrome (Manifest handled by plugin) -->
+
+    <!-- Flatpickr (Industry-Standard Date Picker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   </head>
   <body>
     <div id="root"></div>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

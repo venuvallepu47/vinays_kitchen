@@ -25,7 +25,7 @@ const MORE_ITEMS = [
 
 const MORE_PATHS = MORE_ITEMS.map(i => i.path);
 
-export function BottomNav() {
+export function BottomNav({ hidden }: { hidden?: boolean }) {
     const [showMore, setShowMore] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
@@ -39,10 +39,13 @@ export function BottomNav() {
 
     return (
         <>
-            <nav className="fixed bottom-0 left-0 right-0 z-[200]">
-                <div className="bg-white/95 backdrop-blur-xl border-t border-slate-100/80 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]"
-                    style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                    <div className="flex items-center h-16 max-w-md mx-auto px-2">
+            <nav className={cn(
+                "relative z-[200] shrink-0 transition-all duration-300 ease-in-out",
+                hidden ? "translate-y-full opacity-0 pointer-events-none h-0" : "translate-y-0 opacity-100 h-auto"
+            )}>
+                <div className="bg-white/95 backdrop-blur-xl border-t border-slate-100/50 shadow-[0_-1px_10px_rgba(0,0,0,0.02),0_-4px_24px_rgba(0,0,0,0.04)]"
+                    style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}>
+                    <div className="flex items-center h-[52px] max-w-md mx-auto px-2">
 
                         {PRIMARY_NAV.map(({ path, icon: Icon, label }) => (
                             <NavLink
@@ -99,7 +102,7 @@ export function BottomNav() {
             {showMore && (
                 <>
                     <div className="fixed inset-0 z-[190] bg-black/30 backdrop-blur-[2px]" onClick={() => setShowMore(false)} />
-                    <div className="fixed left-0 right-0 z-[195] max-w-md mx-auto" style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}>
+                    <div className="fixed left-0 right-0 z-[195] max-w-md mx-auto" style={{ bottom: 'calc(max(env(safe-area-inset-bottom, 0px), 8px) + 52px)' }}>
                         <div className="bg-white rounded-t-3xl shadow-2xl border border-slate-100/80 overflow-hidden animate-slide-up">
                             <div className="flex justify-center pt-3 pb-1">
                                 <div className="w-8 h-1 bg-slate-200 rounded-full" />

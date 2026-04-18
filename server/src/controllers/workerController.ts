@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
+import { getISTDate, getISTDateString } from '../utils/date';
 
 // GET all workers
 export const getWorkers = async (req: Request, res: Response) => {
@@ -82,7 +83,7 @@ export const createWorker = async (req: Request, res: Response) => {
         const { name, phone, salary_per_day, joining_date } = req.body;
         const result = await pool.query(
             'INSERT INTO workers (name, phone, salary_per_day, joining_date) VALUES ($1, $2, $3, $4) RETURNING *',
-            [name, phone, salary_per_day, joining_date || new Date()]
+            [name, phone, salary_per_day, joining_date || getISTDate()]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -105,13 +106,25 @@ export const updateWorker = async (req: Request, res: Response) => {
     }
 };
 
-// DELETE worker (soft delete)
+// DELETE worker (soft delete with integrity check)
 export const deleteWorker = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+
+        // Check for existing records to ensure data integrity
+        const attendance = await pool.query('SELECT COUNT(*) FROM attendance WHERE worker_id=$1', [id]);
+        const payments = await pool.query('SELECT COUNT(*) FROM salary_payments WHERE worker_id=$1', [id]);
+
+        if (parseInt(attendance.rows[0].count) > 0 || parseInt(payments.rows[0].count) > 0) {
+            return res.status(400).json({ 
+                error: 'Cannot delete: This worker has associated attendance or salary records. Please delete those records first if you wish to completely remove them, or keep them active to preserve history.' 
+            });
+        }
+
         await pool.query('UPDATE workers SET is_active=false WHERE id=$1', [id]);
         res.json({ message: 'Worker removed' });
     } catch (err) {
+        console.error('Delete Worker Error:', err);
         res.status(500).json({ error: 'Failed to remove worker' });
     }
 };
@@ -120,7 +133,7 @@ export const deleteWorker = async (req: Request, res: Response) => {
 export const getAttendanceByDate = async (req: Request, res: Response) => {
     try {
         const { date } = req.query;
-        const targetDate = date || new Date().toISOString().split('T')[0];
+        const targetDate = typeof date === 'string' ? date : getISTDateString();
 
         const workers = await pool.query('SELECT * FROM workers WHERE is_active=true ORDER BY name');
         const attendance = await pool.query(

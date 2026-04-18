@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { DateInput } from '../components/ui/DateInput';
 import { useToast } from '../contexts/ToastContext';
+import { formatCurrency, today } from '../utils/format';
 import { cn } from '../utils/cn';
 import api from '../utils/api';
 
@@ -15,7 +16,7 @@ const STATUS_STYLE: Record<Status, string> = {
 
 export function Attendance() {
     const { toast } = useToast();
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(today());
     const [workers, setWorkers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<number | null>(null);
@@ -49,21 +50,24 @@ export function Attendance() {
 
     const dateObj = new Date(date + 'T12:00:00');
     const formatted = dateObj.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const isToday = date === new Date().toISOString().split('T')[0];
+    const isToday = date === today();
 
     return (
         <div className="pb-24">
             {/* Date Selector */}
             <div className="px-4 pt-4 pb-3">
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
-                    <button onClick={() => changeDate(-1)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors active:bg-slate-200">
+                <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-3.5 flex items-center gap-3">
+                    <button onClick={() => changeDate(-1)} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 active:bg-slate-100 active:text-primary-600 transition-all active:scale-90 border border-slate-100">
                         <ChevronLeft size={20} />
                     </button>
-                    <div className="flex-1 text-center">
-                        <p className="text-sm font-black text-slate-900">{formatted}</p>
-                        {isToday && <span className="text-[10px] font-bold bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full uppercase">Today</span>}
+                    <div className="flex-1">
+                        <DateInput 
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                            hideLabel
+                        />
                     </div>
-                    <button onClick={() => changeDate(1)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors active:bg-slate-200">
+                    <button onClick={() => changeDate(1)} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 active:bg-slate-100 active:text-primary-600 transition-all active:scale-90 border border-slate-100">
                         <ChevronRight size={20} />
                     </button>
                 </div>

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
@@ -21,15 +22,44 @@ export function AppLayout() {
     const title = PAGE_TITLES[location.pathname] || "Vinay's Kitchen";
     const isDashboard = location.pathname === '/';
 
+    // Mobile Keyboard Fix: Track visual viewport to prevent navbar lifting issues
+    const [vh, setVh] = useState(window.visualViewport?.height || window.innerHeight);
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+    useEffect(() => {
+        if (!window.visualViewport) return;
+        const handleResize = () => {
+            const currentVh = window.visualViewport!.height;
+            setVh(currentVh);
+            
+            // If height drops significantly, keyboard is likely open
+            setIsKeyboardVisible(currentVh < window.innerHeight * 0.85);
+
+            // Ensure no ghost scrolling on keyboard dismissal
+            if (currentVh >= window.innerHeight) {
+                window.scrollTo(0, 0);
+            }
+        };
+        window.visualViewport.addEventListener('resize', handleResize);
+        window.visualViewport.addEventListener('scroll', handleResize);
+        return () => {
+            window.visualViewport?.removeEventListener('resize', handleResize);
+            window.visualViewport?.removeEventListener('scroll', handleResize);
+        };
+    }, []);
+
     return (
-        <div className="h-dvh bg-slate-50 flex flex-col max-w-md mx-auto shadow-xl overflow-hidden">
+        <div 
+            style={{ height: vh }}
+            className="fixed inset-0 bg-slate-50 flex flex-col max-w-md mx-auto shadow-xl overflow-hidden"
+        >
             <TopBar title={title} showLogo={isDashboard} variant="light" />
-            <div className="flex-1 pt-16 pb-16 overflow-hidden">
+            <main className="flex-1 min-h-0 overflow-hidden relative">
                 <div className={cn('h-full overflow-y-auto overscroll-y-contain', !isDashboard && 'p-4')}>
                     <Outlet />
                 </div>
-            </div>
-            <BottomNav />
+            </main>
+            <BottomNav hidden={isKeyboardVisible} />
         </div>
     );
 }

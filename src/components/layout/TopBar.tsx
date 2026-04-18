@@ -19,12 +19,12 @@ export function TopBar({ title, showBack, showLogo, rightAction, variant = 'ligh
 
     return (
         <header className={cn(
-            'fixed top-0 left-0 right-0 z-50 pt-safe',
+            'relative z-50 pt-safe shrink-0',
             isDark
                 ? 'bg-[#92400e]'
                 : 'bg-white border-b border-slate-100 shadow-[0_1px_0_rgba(0,0,0,0.04),0_2px_8px_rgba(0,0,0,0.04)]'
         )}>
-            <div className="flex items-center justify-between h-16 px-4 max-w-md mx-auto">
+            <div className="flex items-center justify-between h-14 px-4 max-w-md mx-auto">
                 <div className="flex-1 flex justify-start">
                     {showBack && (
                         <button
@@ -44,7 +44,7 @@ export function TopBar({ title, showBack, showLogo, rightAction, variant = 'ligh
                         <img
                             src="/logo.png"
                             alt="Vinay's Kitchen"
-                            className="h-14 w-auto object-contain"
+                            className="h-10 w-auto object-contain"
                             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                     ) : (

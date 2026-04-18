@@ -3,9 +3,12 @@ import {
     getVendors, getVendorById, createVendor, updateVendor, deleteVendor
 } from '../controllers/vendorController';
 import {
+    createBill, updateBill, getVendorLedger, deleteBill, createPayment, updatePayment, deletePayment, getBill
+} from '../controllers/vendorBillController';
+import {
     getMaterials, createMaterial, updateMaterial, deleteMaterial,
-    getMaterialPurchases, logPurchase, getAllPurchases, deletePurchase,
-    logUsage, getMaterialUsage
+    getMaterialPurchases, logPurchase, getAllPurchases, deletePurchase, updatePurchase,
+    logUsage, getMaterialUsage, updateUsage, deleteUsage
 } from '../controllers/materialController';
 import {
     getSales, createSale, updateSale, deleteSale
@@ -15,7 +18,7 @@ import {
     getAttendanceByDate, markAttendance
 } from '../controllers/workerController';
 import {
-    getSalaryPayments, logSalaryPayment, deleteSalaryPayment
+    getSalaryPayments, logSalaryPayment, deleteSalaryPayment, updateSalaryPayment
 } from '../controllers/salaryController';
 import {
     getExpenses, createExpense, updateExpense, deleteExpense
@@ -23,8 +26,15 @@ import {
 import {
     getDashboardStats, getProfitLoss
 } from '../controllers/statsController';
+import {
+    getSettings, updateSettings
+} from '../controllers/settingsController';
 
 const router = express.Router();
+
+// Settings
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
 
 // Vendors
 router.get('/vendors', getVendors);
@@ -32,6 +42,16 @@ router.get('/vendors/:id', getVendorById);
 router.post('/vendors', createVendor);
 router.put('/vendors/:id', updateVendor);
 router.delete('/vendors/:id', deleteVendor);
+
+// Vendor Bills & Payments (credit/dues tracking)
+router.get('/vendors/:id/ledger', getVendorLedger);
+router.post('/vendors/:id/bills', createBill);
+router.put('/vendor-bills/:id', updateBill);
+router.get('/vendor-bills/:id', getBill);
+router.delete('/vendor-bills/:id', deleteBill);
+router.post('/vendors/:id/payments', createPayment);
+router.put('/vendor-payments/:id', updatePayment);
+router.delete('/vendor-payments/:id', deletePayment);
 
 // Materials
 router.get('/materials', getMaterials);
@@ -44,10 +64,13 @@ router.get('/materials/:id/usage', getMaterialUsage);
 // Purchases (all + per-material)
 router.get('/purchases', getAllPurchases);
 router.post('/purchases', logPurchase);
+router.put('/purchases/:id', updatePurchase);
 router.delete('/purchases/:id', deletePurchase);
 
 // Usage
 router.post('/usage', logUsage);
+router.put('/usage/:id', updateUsage);
+router.delete('/usage/:id', deleteUsage);
 
 // Sales
 router.get('/sales', getSales);
@@ -69,6 +92,7 @@ router.post('/attendance', markAttendance);
 // Salary Payments
 router.get('/salary-payments', getSalaryPayments);
 router.post('/salary-payments', logSalaryPayment);
+router.put('/salary-payments/:id', updateSalaryPayment);
 router.delete('/salary-payments/:id', deleteSalaryPayment);
 
 // Expenses

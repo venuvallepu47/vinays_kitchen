@@ -44,15 +44,17 @@ export function Vendors() {
 
     return (
         <div className="pb-24">
-            <div className="px-4 pt-4 pb-3 flex gap-2">
-                <div className="relative flex-1">
-                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search vendors…"
-                        className="w-full h-10 pl-9 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors" />
+            <div className="px-4 pt-4 pb-3 flex flex-col gap-3">
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search suppliers…"
+                            className="w-full h-10 pl-9 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors" />
+                    </div>
+                    <button onClick={() => setShowAdd(true)} className="h-10 px-4 bg-primary-600 text-white text-sm font-bold rounded-xl flex items-center gap-1.5 active:bg-primary-700 shrink-0 shadow-sm transition-all active:scale-95">
+                        <Plus size={16} /> Add Vendor
+                    </button>
                 </div>
-                <button onClick={() => setShowAdd(true)} className="h-10 px-4 bg-primary-600 text-white text-sm font-bold rounded-xl flex items-center gap-1.5 active:bg-primary-700 shrink-0">
-                    <Plus size={16} /> Add
-                </button>
             </div>
 
             {loading ? <div className="px-4"><ListSkeleton /></div> : filtered.length === 0 ? (
@@ -61,53 +63,76 @@ export function Vendors() {
                         <Truck size={24} className="text-slate-400" />
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-slate-700">{query ? 'No vendors found' : 'No vendors yet'}</p>
-                        <p className="text-xs text-slate-400 mt-1">Add your first supplier to get started</p>
+                        <p className="text-sm font-bold text-slate-700">{query ? 'No suppliers found' : 'No suppliers registered'}</p>
+                        <p className="text-xs text-slate-400 mt-1">Keep track of your material sources in one place</p>
                     </div>
-                    {!query && <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary-600 text-white text-xs font-bold rounded-xl"><Plus size={14} /> Add Vendor</button>}
+                    {!query && (
+                        <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-primary-500/20 active:scale-95 transition-all">
+                            <Plus size={14} /> Add First Supplier
+                        </button>
+                    )}
                 </div>
             ) : (
-                <div className="px-4 space-y-2">
-                    {filtered.map(vendor => (
+                <div className="px-4 space-y-3">
+                    <div className="flex items-center justify-between mb-1 px-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{filtered.length} Suppliers</p>
+                    </div>
+                    {filtered.map(vendor => {
+                        const outstanding = parseFloat(vendor.outstanding || 0);
+                        return (
                         <div key={vendor.id} onClick={() => navigate(`/vendors/${vendor.id}`)}
-                            className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-3.5 flex items-center gap-3 cursor-pointer active:bg-slate-50 transition-colors">
-                            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                                <span className="text-sm font-black text-orange-700">{vendor.name.charAt(0).toUpperCase()}</span>
+                            className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 flex items-center gap-3 cursor-pointer active:bg-slate-50 transition-all active:scale-[0.98] group">
+                            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center shrink-0 border border-orange-100/50">
+                                <span className="text-lg font-black text-orange-700">{vendor.name.charAt(0).toUpperCase()}</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-slate-900 truncate">{vendor.name}</p>
-                                <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                                    <Phone size={10} /> {vendor.phone || 'No phone'}
+                                <p className="text-sm font-bold text-slate-900 truncate mb-0.5">{vendor.name}</p>
+                                <p className="text-xs text-slate-400 font-medium flex items-center gap-1">
+                                    <Phone size={10} className="text-slate-300" /> {vendor.phone || 'No phone'}
                                 </p>
                             </div>
-                            <div className="text-right shrink-0">
-                                <p className="text-sm font-black text-slate-700">{formatCurrency(parseFloat(vendor.total_purchased || 0))}</p>
-                                <p className="text-[10px] text-slate-400 mt-0.5">total bought</p>
+                            <div className="text-right shrink-0 space-y-1">
+                                {outstanding > 0 ? (
+                                    <>
+                                        <p className="text-sm font-black text-red-600">{formatCurrency(outstanding)}</p>
+                                        <p className="text-[10px] font-bold text-red-400 uppercase tracking-tight">Due</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-black text-green-600">{formatCurrency(parseFloat(vendor.total_credit || 0))}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">All Paid</p>
+                                    </>
+                                )}
                             </div>
-                            <ChevronRight size={16} className="text-slate-300 shrink-0" />
+                            <ChevronRight size={16} className="text-slate-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
-            <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add Vendor">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Vendor Name *</label>
-                        <input required placeholder="e.g. Raju Wholesale" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                            className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
+            <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="New Supplier Registration">
+                <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+                    <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-5">
+                        <div>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block px-1">Supplier Name *</label>
+                            <input required placeholder="e.g. Raju Wholesale Mart" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block px-1">Phone Number</label>
+                            <input placeholder="Enter contact number" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                                className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block px-1">Business Address</label>
+                            <textarea value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} rows={2} placeholder="Market, Shop number, etc."
+                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm resize-none" />
+                        </div>
                     </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Phone</label>
-                        <input placeholder="9876543210" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                            className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Address</label>
-                        <textarea value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} rows={2} placeholder="Vendor address"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 resize-none" />
-                    </div>
-                    <button type="submit" className="w-full py-3.5 bg-primary-600 text-white font-bold rounded-2xl active:bg-primary-700 transition-colors">Add Vendor</button>
+                    <button type="submit" className="w-full py-4.5 bg-primary-600 text-white font-black rounded-2xl shadow-xl shadow-primary-500/20 active:scale-95 transition-all outline-none">
+                        Register Supplier
+                    </button>
                 </form>
             </Modal>
         </div>

@@ -120,6 +120,72 @@
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0px);
   }
+
+  /* --- Premium Flatpickr Theme (Industry-Grade) --- */
+  .flatpickr-calendar {
+    @apply rounded-3xl border-none shadow-2xl bg-white/95 backdrop-blur-xl animate-in fade-in zoom-in duration-200;
+    width: 320px;
+    margin-top: 8px;
+  }
+
+  .flatpickr-months {
+    @apply pt-4 pb-2 px-2;
+  }
+
+  .flatpickr-month {
+    @apply h-10 select-none;
+  }
+
+  .flatpickr-current-month {
+    @apply text-sm font-black text-slate-800 uppercase tracking-widest pt-2;
+  }
+
+  .flatpickr-monthDropdown-months {
+    @apply font-black text-slate-800 hover:bg-slate-50 rounded-lg transition-colors !important;
+  }
+
+  .flatpickr-weekday {
+    @apply text-[10px] font-black text-slate-400 uppercase tracking-widest !important;
+  }
+
+  .flatpickr-day {
+    @apply rounded-xl font-bold text-slate-700 transition-all !important;
+    height: 40px;
+    line-height: 40px;
+    margin: 2px;
+  }
+
+  .flatpickr-day.today {
+    @apply border-2 border-primary-200 text-primary-700 !important;
+  }
+
+  .flatpickr-day.selected,
+  .flatpickr-day.selected:hover {
+    @apply bg-primary-600 border-none text-white shadow-lg shadow-primary-500/20 scale-110 z-10 !important;
+  }
+
+  .flatpickr-day:hover {
+    @apply bg-slate-50 text-slate-900 border-none !important;
+  }
+
+  .flatpickr-day.prevMonthDay,
+  .flatpickr-day.nextMonthDay {
+    @apply text-slate-300 opacity-50 !important;
+  }
+
+  /* Navigation Arrows */
+  .flatpickr-prev-month, .flatpickr-next-month {
+    @apply h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-colors !important;
+    padding: 0 !important;
+  }
+
+  .flatpickr-prev-month svg, .flatpickr-next-month svg {
+    @apply fill-slate-400 scale-90 transition-colors;
+  }
+
+  .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg {
+    @apply fill-primary-600;
+  }
 }
 
 @media print {

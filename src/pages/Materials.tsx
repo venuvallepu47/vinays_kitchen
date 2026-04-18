@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, AlertTriangle, ChevronRight, ShoppingCart, Minus, Banknote, CreditCard, Building2, Calendar } from 'lucide-react';
+import { Plus, Search, Package, AlertTriangle, ChevronRight, ShoppingCart, Minus, Banknote, CreditCard, Building2 } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { useNavigate } from 'react-router-dom';
 import { ListSkeleton } from '../components/ui/Skeleton';

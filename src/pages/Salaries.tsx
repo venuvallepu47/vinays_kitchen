@@ -1,5 +1,5 @@
 import { Banknote, Pencil, Trash2, Calendar, User, Search, Filter } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';

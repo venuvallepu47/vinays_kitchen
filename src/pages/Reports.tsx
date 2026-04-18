@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
-import { formatCurrency, today, getISTDate } from '../utils/format';
+import { formatCurrency, getISTDate } from '../utils/format';
 import { cn } from '../utils/cn';
 import api from '../utils/api';
 

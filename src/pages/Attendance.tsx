@@ -1,7 +1,8 @@
-import { CalendarCheck, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { useToast } from '../contexts/ToastContext';
-import { formatCurrency, today } from '../utils/format';
+import { today } from '../utils/format';
 import { cn } from '../utils/cn';
 import api from '../utils/api';
 
@@ -47,10 +48,6 @@ export function Attendance() {
         } catch { toast('Failed to save', 'error'); }
         finally { setSaving(null); }
     };
-
-    const dateObj = new Date(date + 'T12:00:00');
-    const formatted = dateObj.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const isToday = date === today();
 
     return (
         <div className="pb-24">

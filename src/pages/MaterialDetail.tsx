@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Package, TrendingDown, Trash2, Pencil, Calendar, Banknote, CreditCard, Building2, Search, Filter, X } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Plus, Package, TrendingDown, Trash2, Pencil, Banknote, CreditCard, Building2, Search, Filter, ChevronDown } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
@@ -37,9 +37,9 @@ function PaymentModeChips({ value, onChange }: { value: string; onChange: (v: st
 
 export function MaterialDetail() {
     const { id } = useParams();
-    const navigate = useNavigate();
     const { toast } = useToast();
     const [material, setMaterial] = useState<any>(null);
+    const [saving, setSaving] = useState(false);
     const [units, setUnits] = useState<string[]>(FALLBACK_UNITS);
     const [purchases, setPurchases] = useState<any[]>([]);
     const [usage, setUsage] = useState<any[]>([]);

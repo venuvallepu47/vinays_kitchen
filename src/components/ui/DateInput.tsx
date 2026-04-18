@@ -12,6 +12,7 @@ declare global {
 interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
     label?: string;
     error?: string;
+    hideLabel?: boolean;
     containerClassName?: string;
 }
 
@@ -21,7 +22,7 @@ interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement
  * that overrides native browser behaviors for 100% design consistency.
  */
 export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
-    ({ label, error, className, containerClassName, value, onChange, placeholder, ...props }, ref) => {
+    ({ label, error, hideLabel, className, containerClassName, value, onChange, placeholder, ...props }, ref) => {
         const inputRef = useRef<HTMLInputElement>(null);
         const fpInstance = useRef<any>(null);
 
@@ -36,7 +37,7 @@ export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
                 dateFormat: "Y-m-d", // Value remains standard YYYY-MM-DD
                 animate: true,
                 defaultDate: value || undefined,
-                onChange: (selectedDates: Date[], dateStr: string) => {
+                onChange: (_selectedDates: Date[], dateStr: string) => {
                     // Trigger the native-like onChange event for React
                     if (onChange) {
                         const event = {
@@ -63,7 +64,7 @@ export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
 
         return (
             <div className={cn("flex flex-col gap-1.5", containerClassName)}>
-                {label && (
+                {label && !hideLabel && (
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                         {label}
                     </label>

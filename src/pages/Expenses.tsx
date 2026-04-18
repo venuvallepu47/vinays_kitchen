@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Receipt, Trash2, Home, Zap, Droplets, Flame, Bus, Wrench, CreditCard, Search, Pencil, Calendar } from 'lucide-react';
+import { Plus, Receipt, Trash2, Home, Zap, Droplets, Flame, Bus, Wrench, CreditCard, Search, Pencil } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Plus, Search, ShoppingBag, Trash2, Pencil } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { ListSkeleton } from '../components/ui/Skeleton';
@@ -13,7 +13,6 @@ import api from '../utils/api';
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 export function Sales() {
-    const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
     

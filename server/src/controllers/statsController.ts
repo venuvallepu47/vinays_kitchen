@@ -51,8 +51,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             workers_present_today: parseInt(workersPresent.rows[0].count),
             recent_sales: recentSales.rows,
         });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    } catch (err: any) {
+        console.error('[statsController] getDashboardStats error:', err.message || err);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats', details: err.message });
     }
 };
 

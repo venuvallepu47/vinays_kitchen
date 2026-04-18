@@ -136,7 +136,7 @@
   }
 
   .flatpickr-monthDropdown-months {
-    @apply font-black text-slate-800 hover:bg-slate-50 rounded-lg transition-colors !important;
+    @apply !font-black !text-slate-800 !hover:bg-slate-50 !rounded-lg !transition-colors;
   }
 
   .flatpickr-weekday {

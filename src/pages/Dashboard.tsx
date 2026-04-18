@@ -123,18 +123,18 @@ export function Dashboard() {
                     <div className="flex items-center justify-between mb-4">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Revenue Mix</p>
                         <p className="text-[10px] font-black text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
-                            {((s.upi_sales / (s.month_sales || 1)) * 100).toFixed(0)}% Digital
+                            {((parseFloat(s.upi_sales || 0) / (parseFloat(s.month_sales) || 1)) * 100).toFixed(0)}% Digital
                         </p>
                     </div>
                     
                     <div className="h-2.5 bg-slate-50 rounded-full overflow-hidden flex mb-4">
                         <div 
                             className="h-full bg-emerald-500 transition-all duration-1000" 
-                            style={{ width: `${(s.cash_sales / (s.month_sales || 1)) * 100}%` }} 
+                            style={{ width: `${(parseFloat(s.cash_sales || 0) / (parseFloat(s.month_sales) || 1)) * 100}%` }} 
                         />
                         <div 
                             className="h-full bg-indigo-500 transition-all duration-1000" 
-                            style={{ width: `${(s.upi_sales / (s.month_sales || 1)) * 100}%` }} 
+                            style={{ width: `${(parseFloat(s.upi_sales || 0) / (parseFloat(s.month_sales) || 1)) * 100}%` }} 
                         />
                     </div>
 

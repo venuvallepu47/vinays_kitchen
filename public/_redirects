@@ -4,4 +4,4 @@
 
 # 2. Proxying API: Connects Netlify to Render
 # IMPORTANT: Replace YOUR_RENDER_SERVICE_URL with your actual Render URL (e.g., https://vinays-kitchen-backend.onrender.com)
-/api/*  YOUR_RENDER_SERVICE_URL/api/:splat  200!
+/api/*  https://vinays-kitchen.onrender.com/api/:splat  200!

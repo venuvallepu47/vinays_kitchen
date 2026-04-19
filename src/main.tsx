@@ -9,7 +9,7 @@ import { registerSW } from 'virtual:pwa-register';
 // Automatically check for new deployments every 10 minutes.
 // If a new version is found, skipWaiting + clientsClaim will trigger 'controllerchange'
 // which will then reload the tab instantly for the user.
-const updateSW = registerSW({
+registerSW({
     onRegistered(r) {
         if (r) {
             // Check every 10 mins

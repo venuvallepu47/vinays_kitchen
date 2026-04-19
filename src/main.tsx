@@ -4,9 +4,23 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.tsx';
 
-// Enterprise cache-bust: when a new Service Worker takes control of this tab
-// (because skipWaiting + clientsClaim fired on the new SW), reload once so
-// the user always gets the latest build — no manual hard-refresh needed.
+import { registerSW } from 'virtual:pwa-register';
+
+// Automatically check for new deployments every 10 minutes.
+// If a new version is found, skipWaiting + clientsClaim will trigger 'controllerchange'
+// which will then reload the tab instantly for the user.
+const updateSW = registerSW({
+    onRegistered(r) {
+        if (r) {
+            // Check every 10 mins
+            setInterval(() => { r.update(); }, 10 * 60 * 1000);
+            
+            // Also check whenever the user switches back to the app
+            window.addEventListener('focus', () => { r.update(); });
+        }
+    },
+});
+
 if ('serviceWorker' in navigator) {
     let reloading = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {

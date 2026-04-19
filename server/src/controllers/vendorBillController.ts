@@ -26,22 +26,25 @@ export const createBill = async (req: Request, res: Response) => {
         );
         const bill = billRes.rows[0];
 
+        // Batch insert all bill items + purchases in two round-trips instead of 2N
+        const matIds: number[]   = [], qtys: number[]   = [],
+              prices: number[]   = [], totals: number[] = [];
         for (const item of items) {
-            const itemTotal = parseFloat(item.quantity) * parseFloat(item.price_per_unit);
-
-            await client.query(
-                `INSERT INTO vendor_bill_items (bill_id, material_id, quantity, price_per_unit, total_amount)
-                 VALUES ($1, $2, $3, $4, $5)`,
-                [bill.id, item.material_id, item.quantity, item.price_per_unit, itemTotal]
-            );
-
-            // Also insert into purchases for stock tracking
-            await client.query(
-                `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, bill_id)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [item.material_id, vendor_id, item.quantity, item.price_per_unit, itemTotal, bill_date, bill.id]
-            );
+            matIds.push(item.material_id);
+            qtys.push(parseFloat(item.quantity));
+            prices.push(parseFloat(item.price_per_unit));
+            totals.push(parseFloat(item.quantity) * parseFloat(item.price_per_unit));
         }
+        await client.query(
+            `INSERT INTO vendor_bill_items (bill_id, material_id, quantity, price_per_unit, total_amount)
+             SELECT $1, unnest($2::int[]), unnest($3::numeric[]), unnest($4::numeric[]), unnest($5::numeric[])`,
+            [bill.id, matIds, qtys, prices, totals]
+        );
+        await client.query(
+            `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, bill_id)
+             SELECT unnest($1::int[]), $2, unnest($3::numeric[]), unnest($4::numeric[]), unnest($5::numeric[]), $6, $7`,
+            [matIds, vendor_id, qtys, prices, totals, bill_date, bill.id]
+        );
 
         await client.query('COMMIT');
         res.status(201).json(bill);
@@ -59,44 +62,43 @@ export const getVendorLedger = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const billsRes = await pool.query(`
-            SELECT vb.*,
-                COALESCE(json_agg(
-                    json_build_object(
-                        'id', vbi.id,
-                        'material_id', vbi.material_id,
-                        'material_name', m.name,
-                        'unit', m.unit,
-                        'quantity', vbi.quantity,
-                        'price_per_unit', vbi.price_per_unit,
-                        'total_amount', vbi.total_amount
-                    ) ORDER BY vbi.id
-                ) FILTER (WHERE vbi.id IS NOT NULL), '[]') AS items
-            FROM vendor_bills vb
-            LEFT JOIN vendor_bill_items vbi ON vbi.bill_id = vb.id
-            LEFT JOIN materials m ON m.id = vbi.material_id
-            WHERE vb.vendor_id = $1
-            GROUP BY vb.id
-            ORDER BY vb.bill_date DESC, vb.created_at DESC
-        `, [id]);
-
-        const paymentsRes = await pool.query(`
-            SELECT * FROM vendor_payments
-            WHERE vendor_id = $1
-            ORDER BY payment_date DESC, created_at DESC
-        `, [id]);
+        const [billsRes, paymentsRes, oldPurchasesRes] = await Promise.all([
+            pool.query(`
+                SELECT vb.*,
+                    COALESCE(json_agg(
+                        json_build_object(
+                            'id', vbi.id,
+                            'material_id', vbi.material_id,
+                            'material_name', m.name,
+                            'unit', m.unit,
+                            'quantity', vbi.quantity,
+                            'price_per_unit', vbi.price_per_unit,
+                            'total_amount', vbi.total_amount
+                        ) ORDER BY vbi.id
+                    ) FILTER (WHERE vbi.id IS NOT NULL), '[]') AS items
+                FROM vendor_bills vb
+                LEFT JOIN vendor_bill_items vbi ON vbi.bill_id = vb.id
+                LEFT JOIN materials m ON m.id = vbi.material_id
+                WHERE vb.vendor_id = $1
+                GROUP BY vb.id
+                ORDER BY vb.bill_date DESC, vb.created_at DESC
+            `, [id]),
+            pool.query(`
+                SELECT * FROM vendor_payments
+                WHERE vendor_id = $1
+                ORDER BY payment_date DESC, created_at DESC
+            `, [id]),
+            pool.query(`
+                SELECT p.*, m.name AS material_name, m.unit
+                FROM purchases p
+                LEFT JOIN materials m ON m.id = p.material_id
+                WHERE p.vendor_id = $1 AND p.bill_id IS NULL
+                ORDER BY p.purchase_date DESC
+            `, [id]),
+        ]);
 
         const bills = billsRes.rows;
         const payments = paymentsRes.rows;
-
-        // Old purchases recorded directly (before billing system, bill_id IS NULL)
-        const oldPurchasesRes = await pool.query(`
-            SELECT p.*, m.name AS material_name, m.unit
-            FROM purchases p
-            LEFT JOIN materials m ON m.id = p.material_id
-            WHERE p.vendor_id = $1 AND p.bill_id IS NULL
-            ORDER BY p.purchase_date DESC
-        `, [id]);
         const oldPurchases = oldPurchasesRes.rows;
 
         // totalCredit = vendor_bills + old direct purchases
@@ -148,21 +150,30 @@ export const updateBill = async (req: Request, res: Response) => {
             [bill_date, total_amount, paid, payment_mode || 'cash', notes || null, id]
         );
 
-        // Replace items and synced purchases
-        await client.query('DELETE FROM vendor_bill_items WHERE bill_id=$1', [id]);
-        await client.query('DELETE FROM purchases WHERE bill_id=$1', [id]);
+        // Replace items and synced purchases — delete then batch re-insert (2 round-trips not 2N)
+        await Promise.all([
+            client.query('DELETE FROM vendor_bill_items WHERE bill_id=$1', [id]),
+            client.query('DELETE FROM purchases WHERE bill_id=$1', [id]),
+        ]);
 
+        const matIds: number[]   = [], qtys: number[]   = [],
+              prices: number[]   = [], totals: number[] = [];
         for (const item of items) {
-            const itemTotal = parseFloat(item.quantity) * parseFloat(item.price_per_unit);
-            await client.query(
-                `INSERT INTO vendor_bill_items (bill_id, material_id, quantity, price_per_unit, total_amount) VALUES ($1,$2,$3,$4,$5)`,
-                [id, item.material_id, item.quantity, item.price_per_unit, itemTotal]
-            );
-            await client.query(
-                `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, bill_id) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-                [item.material_id, vendor_id, item.quantity, item.price_per_unit, itemTotal, bill_date, id]
-            );
+            matIds.push(item.material_id);
+            qtys.push(parseFloat(item.quantity));
+            prices.push(parseFloat(item.price_per_unit));
+            totals.push(parseFloat(item.quantity) * parseFloat(item.price_per_unit));
         }
+        await client.query(
+            `INSERT INTO vendor_bill_items (bill_id, material_id, quantity, price_per_unit, total_amount)
+             SELECT $1, unnest($2::int[]), unnest($3::numeric[]), unnest($4::numeric[]), unnest($5::numeric[])`,
+            [id, matIds, qtys, prices, totals]
+        );
+        await client.query(
+            `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, bill_id)
+             SELECT unnest($1::int[]), $2, unnest($3::numeric[]), unnest($4::numeric[]), unnest($5::numeric[]), $6, $7`,
+            [matIds, vendor_id, qtys, prices, totals, bill_date, id]
+        );
 
         await client.query('COMMIT');
         res.json({ message: 'Bill updated' });

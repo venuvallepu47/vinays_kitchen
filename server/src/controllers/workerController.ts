@@ -42,29 +42,35 @@ export const getWorkerById = async (req: Request, res: Response) => {
         const worker = await pool.query('SELECT * FROM workers WHERE id=$1', [id]);
         if (worker.rows.length === 0) return res.status(404).json({ error: 'Worker not found' });
 
-        const attendance = await pool.query(
-            'SELECT * FROM attendance WHERE worker_id=$1 ORDER BY date DESC LIMIT 30',
-            [id]
-        );
-        const payments = await pool.query(
-            'SELECT * FROM salary_payments WHERE worker_id=$1 ORDER BY payment_date DESC',
-            [id]
-        );
-
-        // Calculate balance for current month
-        const stats = await pool.query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN status='Present' THEN 1 WHEN status='Half-day' THEN 0.5 ELSE 0 END), 0) AS days_worked,
-                (SELECT COALESCE(SUM(amount), 0) FROM salary_payments
-                 WHERE worker_id=$1
-                   AND EXTRACT(MONTH FROM payment_date) = EXTRACT(MONTH FROM CURRENT_DATE)
-                   AND EXTRACT(YEAR FROM payment_date) = EXTRACT(YEAR FROM CURRENT_DATE)
-                ) AS paid_this_month
-            FROM attendance
-            WHERE worker_id=$1
-              AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
-              AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
-        `, [id]);
+        const [attendance, payments, stats] = await Promise.all([
+            pool.query(
+                'SELECT * FROM attendance WHERE worker_id=$1 ORDER BY date DESC LIMIT 30',
+                [id]
+            ),
+            pool.query(
+                'SELECT * FROM salary_payments WHERE worker_id=$1 ORDER BY payment_date DESC',
+                [id]
+            ),
+            pool.query(`
+                SELECT
+                    COALESCE(a.days_worked, 0) AS days_worked,
+                    COALESCE(s.paid_this_month, 0) AS paid_this_month
+                FROM (
+                    SELECT SUM(CASE WHEN status='Present' THEN 1 WHEN status='Half-day' THEN 0.5 ELSE 0 END) AS days_worked
+                    FROM attendance
+                    WHERE worker_id=$1
+                      AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+                      AND EXTRACT(YEAR  FROM date) = EXTRACT(YEAR  FROM CURRENT_DATE)
+                ) a
+                CROSS JOIN (
+                    SELECT COALESCE(SUM(amount), 0) AS paid_this_month
+                    FROM salary_payments
+                    WHERE worker_id=$1
+                      AND EXTRACT(MONTH FROM payment_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+                      AND EXTRACT(YEAR  FROM payment_date) = EXTRACT(YEAR  FROM CURRENT_DATE)
+                ) s
+            `, [id]),
+        ]);
 
         res.json({
             worker: worker.rows[0],

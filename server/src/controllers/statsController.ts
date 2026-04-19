@@ -21,14 +21,18 @@ export const getDashboardStats = async (req: Request, res: Response) => {
                         FROM sales
                         WHERE EXTRACT(MONTH FROM date)=$1 AND EXTRACT(YEAR FROM date)=$2`, [month, year]),
             pool.query(`
-                SELECT COUNT(*) FROM (
-                    SELECT m.id,
-                        COALESCE((SELECT SUM(p.quantity) FROM purchases p WHERE p.material_id = m.id), 0)
-                            - COALESCE((SELECT SUM(u.quantity_used) FROM material_usage u WHERE u.material_id = m.id), 0) AS stock
+                WITH stock AS (
+                    SELECT m.min_stock,
+                        COALESCE(p.total_purchased, 0) - COALESCE(u.total_used, 0) AS current_stock
                     FROM materials m
-                    WHERE COALESCE((SELECT SUM(p.quantity) FROM purchases p WHERE p.material_id = m.id), 0)
-                        - COALESCE((SELECT SUM(u.quantity_used) FROM material_usage u WHERE u.material_id = m.id), 0) <= m.min_stock
-                ) sub
+                    LEFT JOIN (
+                        SELECT material_id, SUM(quantity) AS total_purchased FROM purchases GROUP BY material_id
+                    ) p ON p.material_id = m.id
+                    LEFT JOIN (
+                        SELECT material_id, SUM(quantity_used) AS total_used FROM material_usage GROUP BY material_id
+                    ) u ON u.material_id = m.id
+                )
+                SELECT COUNT(*) FROM stock WHERE current_stock <= min_stock
             `),
             pool.query(`
                 SELECT COUNT(*) 

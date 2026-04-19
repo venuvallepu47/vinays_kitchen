@@ -7,11 +7,20 @@ export const getMaterials = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT m.*,
-                COALESCE((SELECT SUM(p.quantity) FROM purchases p WHERE p.material_id = m.id), 0) AS total_purchased,
-                COALESCE((SELECT SUM(u.quantity_used) FROM material_usage u WHERE u.material_id = m.id), 0) AS total_used,
-                COALESCE((SELECT SUM(p.quantity) FROM purchases p WHERE p.material_id = m.id), 0)
-                    - COALESCE((SELECT SUM(u.quantity_used) FROM material_usage u WHERE u.material_id = m.id), 0) AS current_stock
+                COALESCE(p.total_purchased, 0) AS total_purchased,
+                COALESCE(u.total_used, 0)      AS total_used,
+                COALESCE(p.total_purchased, 0) - COALESCE(u.total_used, 0) AS current_stock
             FROM materials m
+            LEFT JOIN (
+                SELECT material_id, SUM(quantity) AS total_purchased
+                FROM purchases
+                GROUP BY material_id
+            ) p ON p.material_id = m.id
+            LEFT JOIN (
+                SELECT material_id, SUM(quantity_used) AS total_used
+                FROM material_usage
+                GROUP BY material_id
+            ) u ON u.material_id = m.id
             ORDER BY m.name ASC
         `);
         res.json(result.rows);

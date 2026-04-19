@@ -383,28 +383,34 @@ export function Materials() {
                         )}
                     </div>
 
-                        <div className="sticky bottom-0 bg-slate-900 -mx-4 -mb-4 p-5 flex items-center justify-between shadow-2xl z-10">
-                            <div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Bill Total</p>
-                                <AmountDisplay amount={stockGrandTotal} className="text-2xl text-white justify-start h-auto py-0" />
+                    {/* Grand total dark card — Matches Vendor flow */}
+                    <div className="bg-slate-900 rounded-3xl p-5 px-6 space-y-2 shadow-lg">
+                        <div className="flex items-center justify-between">
+                            <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>Bill Total</p>
+                            <div className="text-right">
+                                <AmountDisplay 
+                                    amount={stockGrandTotal} 
+                                    className="text-xl font-black text-white block"
+                                    exactClassName="text-[10px] font-medium text-white/50 block mt-0.5"
+                                />
                             </div>
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="h-14 px-8 bg-primary-500 text-white font-black rounded-2xl shadow-lg shadow-primary-500/20 active:scale-95 transition-all text-lg disabled:opacity-50 flex items-center gap-3">
-                                {saving ? (
-                                    <>
-                                        <div className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                                        <span>Saving</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Check size={24} strokeWidth={3} />
-                                        <span>Save</span>
-                                    </>
-                                )}
-                            </button>
                         </div>
+                    </div>
+
+                    <button type="submit" disabled={saving}
+                        className="w-full py-4.5 bg-primary-600 text-white font-black rounded-2xl shadow-xl shadow-primary-500/20 active:scale-95 transition-all outline-none disabled:opacity-60 flex items-center justify-center gap-3">
+                        {saving ? (
+                            <>
+                                <div className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>Saving…</span>
+                            </>
+                        ) : (
+                            <>
+                                <Check size={20} strokeWidth={3} />
+                                <span>Save Purchase</span>
+                            </>
+                        )}
+                    </button>
                 </form>
             </Modal>
 

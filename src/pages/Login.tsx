@@ -4,7 +4,7 @@ import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Login() {
-    const [email, setEmail] = useState('admin@vinayskitchen.com');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +17,7 @@ export function Login() {
         setError('');
         setIsLoading(true);
         await new Promise(r => setTimeout(r, 400));
-        if (email === 'admin@vinayskitchen.com' && password === 'admin123') {
+        if (email === 'admin@vinayskitchen.com' && password === 'Vinay@4488') {
             login({ email, name: "Vinay Admin" });
             navigate('/');
         } else {
@@ -97,9 +97,7 @@ export function Login() {
                         </button>
                     </form>
 
-                    <p className="mt-6 text-center text-xs text-slate-400">
-                        Default: <strong>admin@vinayskitchen.com</strong> / <strong>admin123</strong>
-                    </p>
+
                 </div>
                 <p className="mt-6 text-center text-xs text-amber-300">© {new Date().getFullYear()} Vinay's Kitchen Management</p>
             </div>

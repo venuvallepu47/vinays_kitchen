@@ -4,7 +4,7 @@ import { Plus, Package, TrendingDown, Trash2, Pencil, Banknote, CreditCard, Buil
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
-import { formatCurrency, formatDate, today } from '../utils/format';
+import { formatCurrency, formatCurrencyFull, formatDate, today } from '../utils/format';
 import { useToast } from '../contexts/ToastContext';
 import { TopBar } from '../components/layout/TopBar';
 import { cn } from '../utils/cn';
@@ -436,7 +436,7 @@ export function MaterialDetail() {
                                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-tighter">from</span>
                                                 <p className="text-xs font-bold text-primary-600 truncate">{p.vendor_name || 'Generic Vendor'}</p>
                                             </div>
-                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic tracking-tight">₹{p.price_per_unit}/{material.unit} · {formatDate(p.purchase_date)}</p>
+                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic tracking-tight">{formatCurrencyFull(p.price_per_unit)}/{material.unit} · {formatDate(p.purchase_date)}</p>
                                             {p.notes && <p className="text-[10px] text-slate-400 mt-1 line-clamp-1 italic">{p.notes}</p>}
                                         </div>
                                         <div className="text-right shrink-0">

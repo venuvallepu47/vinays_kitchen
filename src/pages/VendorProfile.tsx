@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
-import { formatCurrency, formatDate, today } from '../utils/format';
+import { formatCurrency, formatCurrencyFull, formatDate, today } from '../utils/format';
 import { useToast } from '../contexts/ToastContext';
 import { TopBar } from '../components/layout/TopBar';
 import { DateInput } from '../components/ui/DateInput';
@@ -87,7 +87,7 @@ function BillCard({ bill, onEdit, onDelete, ...props }: { bill: Bill; onEdit: ()
                                 <div className="flex-1 min-w-0">
                                     <p className="text-xs font-bold text-slate-800 truncate">{item.material_name}</p>
                                     <p className="text-[10px] text-slate-400 font-medium">
-                                        {item.quantity} {item.unit} × {formatCurrency(parseFloat(item.price_per_unit))}
+                                        {item.quantity} {item.unit} × {formatCurrencyFull(parseFloat(item.price_per_unit))}
                                     </p>
                                 </div>
                                 <p className="text-xs font-black text-slate-700 shrink-0">{formatCurrency(parseFloat(item.total_amount))}</p>
@@ -608,7 +608,7 @@ export function VendorProfile() {
                                             </p>
                                             <p className="text-[11px] text-slate-400 font-bold">{formatDate(item.date)} · {item.ref}</p>
                                             <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                                                {item.quantity} {item.unit} × {formatCurrency(parseFloat(item.price_per_unit))}
+                                                {item.quantity} {item.unit} × {formatCurrencyFull(parseFloat(item.price_per_unit))}
                                             </p>
                                         </div>
                                         <div className="text-right shrink-0">

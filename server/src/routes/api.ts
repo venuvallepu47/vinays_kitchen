@@ -8,7 +8,7 @@ import {
 import {
     getMaterials, createMaterial, updateMaterial, deleteMaterial,
     getMaterialPurchases, logPurchase, getAllPurchases, deletePurchase, updatePurchase,
-    logUsage, getMaterialUsage, updateUsage, deleteUsage
+    logUsage, getMaterialUsage, updateUsage, deleteUsage, purchaseMaterial
 } from '../controllers/materialController';
 import {
     getSales, createSale, updateSale, deleteSale
@@ -56,6 +56,7 @@ router.delete('/vendor-payments/:id', deletePayment);
 // Materials
 router.get('/materials', getMaterials);
 router.post('/materials', createMaterial);
+router.post('/materials/:id/purchase', purchaseMaterial);
 router.put('/materials/:id', updateMaterial);
 router.delete('/materials/:id', deleteMaterial);
 router.get('/materials/:id/purchases', getMaterialPurchases);

@@ -1,0 +1,224 @@
+/* ─────────────────────────────────────────────────────────────
+   Vinay's Kitchen — Premium Flatpickr Theme
+   Matches the app's amber-primary design language
+────────────────────────────────────────────────────────────── */
+
+.flatpickr-calendar {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 24px;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.04),
+    0 8px 24px rgba(0,0,0,0.10),
+    0 32px 64px rgba(0,0,0,0.08);
+  padding: 16px;
+  width: 308px;
+  font-family: inherit;
+  animation: fp-slidedown 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fp-slidedown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* Arrow (triangle) — hide the default one */
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after,
+.flatpickr-calendar.arrowBottom::before,
+.flatpickr-calendar.arrowBottom::after {
+  display: none;
+}
+
+/* ── Month Navigation ── */
+.flatpickr-months {
+  padding: 0 0 12px 0;
+  align-items: center;
+}
+
+.flatpickr-month {
+  background: transparent;
+  color: #0f172a;
+  height: 36px;
+  line-height: 36px;
+}
+
+.flatpickr-current-month {
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+  padding: 0;
+  letter-spacing: -0.3px;
+}
+
+.flatpickr-current-month .numInputWrapper {
+  width: 52px;
+}
+
+.flatpickr-current-month input.cur-year {
+  font-weight: 900;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  font-weight: 900;
+  font-size: 15px;
+  color: #0f172a;
+  background: transparent;
+  border: none;
+  appearance: none;
+  cursor: pointer;
+  padding-right: 2px;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  top: 12px;
+}
+
+.flatpickr-prev-month { left: 16px; }
+.flatpickr-next-month { right: 16px; }
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.flatpickr-prev-month svg,
+.flatpickr-next-month svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* ── Weekday Headers ── */
+.flatpickr-weekdays {
+  background: transparent;
+  padding: 0 0 8px 0;
+}
+
+.flatpickr-weekday {
+  background: transparent;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Days Grid ── */
+.flatpickr-days {
+  width: 276px;
+}
+
+.dayContainer {
+  width: 276px;
+  min-width: 276px;
+  max-width: 276px;
+  gap: 2px;
+}
+
+.flatpickr-day {
+  border-radius: 12px;
+  height: 36px;
+  line-height: 36px;
+  max-width: 36px;
+  width: 36px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  border: none;
+  transition: background 0.12s, color 0.12s, transform 0.1s;
+}
+
+.flatpickr-day:hover {
+  background: #fef3c7;
+  color: #92400e;
+  border: none;
+  transform: scale(1.05);
+}
+
+/* Today */
+.flatpickr-day.today {
+  background: #fff7ed;
+  color: #d97706;
+  font-weight: 900;
+  border: 1.5px solid #fed7aa;
+}
+
+.flatpickr-day.today:hover {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Selected */
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: #d97706;
+  color: #ffffff;
+  border: none;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+  transform: scale(1.08);
+}
+
+/* Prev/Next month days */
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.flatpickr-day.prevMonthDay:hover,
+.flatpickr-day.nextMonthDay:hover {
+  background: #f8fafc;
+  color: #94a3b8;
+  transform: none;
+}
+
+/* Disabled */
+.flatpickr-day.disabled,
+.flatpickr-day.disabled:hover {
+  color: #e2e8f0;
+  background: transparent;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Number Input Spinners — hide ── */
+.numInputWrapper span {
+  display: none;
+}
+
+.numInputWrapper:hover span {
+  display: none;
+}
+
+/* ── Mobile override ── */
+@media (max-width: 480px) {
+  .flatpickr-calendar {
+    border-radius: 20px;
+    padding: 12px;
+    width: 288px;
+  }
+
+  .flatpickr-days,
+  .dayContainer {
+    width: 264px;
+    min-width: 264px;
+    max-width: 264px;
+  }
+}

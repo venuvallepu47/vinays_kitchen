@@ -193,3 +193,96 @@ export const deleteUsage = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to delete usage' });
     }
 };
+
+// POST /materials/:id/purchase
+// Material-centric purchase: creates a vendor bill or direct purchase.
+// If same vendor already has an open bill on the same date within the last 2 hours, merges into it.
+export const purchaseMaterial = async (req: Request, res: Response) => {
+    const { id: material_id } = req.params;
+    const { vendor_id, quantity, price_per_unit, purchase_date, paid_amount, payment_mode, notes } = req.body;
+
+    const qty   = parseFloat(quantity);
+    const price = parseFloat(price_per_unit);
+    if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
+        return res.status(400).json({ error: 'Invalid quantity or price' });
+    }
+
+    const item_total = qty * price;
+
+    // No vendor — direct purchase, no bill
+    if (!vendor_id) {
+        const result = await pool.query(
+            `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, notes)
+             VALUES ($1, NULL, $2, $3, $4, $5, $6) RETURNING *`,
+            [material_id, qty, price, item_total, purchase_date, notes || null]
+        );
+        return res.status(201).json({ merged: false, purchase: result.rows[0] });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Check for an existing open bill: same vendor, same date, created within last 2 hours
+        const existing = await client.query(
+            `SELECT * FROM vendor_bills
+             WHERE vendor_id = $1
+               AND bill_date = $2
+               AND created_at >= NOW() - INTERVAL '2 hours'
+             ORDER BY created_at DESC
+             LIMIT 1`,
+            [vendor_id, purchase_date]
+        );
+
+        let bill_id: number;
+        let merged = false;
+
+        if (existing.rows.length > 0) {
+            // Merge into existing bill
+            const bill = existing.rows[0];
+            bill_id = bill.id;
+            merged  = true;
+
+            const new_total = parseFloat(bill.total_amount) + item_total;
+            const added_paid = Math.min(parseFloat(paid_amount || '0'), item_total);
+            const new_paid  = Math.min(parseFloat(bill.paid_amount) + added_paid, new_total);
+
+            await client.query(
+                `UPDATE vendor_bills SET total_amount = $1, paid_amount = $2 WHERE id = $3`,
+                [new_total, new_paid, bill_id]
+            );
+        } else {
+            // Create new bill
+            const paid = Math.min(parseFloat(paid_amount || '0'), item_total);
+            const billRes = await client.query(
+                `INSERT INTO vendor_bills (vendor_id, bill_date, total_amount, paid_amount, payment_mode, notes)
+                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+                [vendor_id, purchase_date, item_total, paid, payment_mode || 'cash', notes || null]
+            );
+            bill_id = billRes.rows[0].id;
+        }
+
+        // Add bill item
+        await client.query(
+            `INSERT INTO vendor_bill_items (bill_id, material_id, quantity, price_per_unit, total_amount)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [bill_id, material_id, qty, price, item_total]
+        );
+
+        // Add purchase record (stock tracking)
+        await client.query(
+            `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, notes, bill_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [material_id, vendor_id, qty, price, item_total, purchase_date, notes || null, bill_id]
+        );
+
+        await client.query('COMMIT');
+        res.status(merged ? 200 : 201).json({ merged, bill_id });
+    } catch (err: any) {
+        await client.query('ROLLBACK');
+        console.error('purchaseMaterial error:', err);
+        res.status(500).json({ error: 'Failed to record purchase' });
+    } finally {
+        client.release();
+    }
+};

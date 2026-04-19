@@ -49,7 +49,7 @@ export function MaterialDetail() {
     const [showUsage, setShowUsage] = useState(false);
     const [showEdit, setShowEdit] = useState(false);
 
-    const [purchaseForm, setPurchaseForm] = useState({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '' });
+    const [purchaseForm, setPurchaseForm] = useState({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
     // Bag/Carton conversion state: user enters count + multiplier, we compute quantity
     const [bagCount, setBagCount] = useState('');
     const [bagKgEach, setBagKgEach] = useState('');
@@ -127,6 +127,7 @@ export function MaterialDetail() {
 
     const handlePurchase = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSaving(true);
         try {
             let finalQuantity = purchaseForm.quantity;
             const unit = material?.unit?.toLowerCase() || '';
@@ -138,13 +139,20 @@ export function MaterialDetail() {
             } else if (isCarton && cartonCount && cartonUnitsEach) {
                 finalQuantity = String(parseFloat(cartonCount) * parseFloat(cartonUnitsEach));
             }
-            await api.post('/purchases', { ...purchaseForm, quantity: finalQuantity, material_id: id });
-            toast('Purchase logged');
+
+            const res = await api.post(`/materials/${id}/purchase`, {
+                ...purchaseForm,
+                quantity: finalQuantity,
+            });
+
+            const merged = res.data?.merged;
+            toast(merged ? 'Added to existing bill (merged)' : 'Purchase logged & bill created');
             setShowPurchase(false);
-            setPurchaseForm({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '' });
+            setPurchaseForm({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
             setBagCount(''); setBagKgEach(''); setCartonCount(''); setCartonUnitsEach('');
             fetchAll();
         } catch { toast('Failed to log purchase', 'error'); }
+        finally { setSaving(false); }
     };
 
     const handleEditPurchase = async (e: React.FormEvent) => {
@@ -567,8 +575,8 @@ export function MaterialDetail() {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 gap-5">
-                             {/* Price for bags/cartons */}
+                                    <div className="grid grid-cols-1 gap-5">
+                            {/* Price for bags/cartons */}
                             {(material.unit?.toLowerCase().includes('bag') || material.unit?.toLowerCase().includes('carton')) && (
                                 <div>
                                     <label className={labelCls}>Price per Standard {material.unit} (₹)</label>
@@ -576,11 +584,11 @@ export function MaterialDetail() {
                                 </div>
                             )}
 
-                        <DateInput 
-                            label="Purchase Date"
-                            value={purchaseForm.purchase_date}
-                            onChange={e => setPurchaseForm(f => ({ ...f, purchase_date: e.target.value }))}
-                        />
+                            <DateInput
+                                label="Purchase Date"
+                                value={purchaseForm.purchase_date}
+                                onChange={e => setPurchaseForm(f => ({ ...f, purchase_date: e.target.value }))}
+                            />
 
                             <div>
                                 <label className={labelCls}>Transaction Notes</label>
@@ -589,9 +597,47 @@ export function MaterialDetail() {
                             </div>
                         </div>
                     </div>
-                    
-                    <button type="submit" className="w-full py-4.5 bg-primary-600 text-white font-black rounded-2xl shadow-xl shadow-primary-500/20 active:scale-95 transition-all">
-                        Confirm & Log Purchase
+
+                    {/* Payment section — only for vendor purchases */}
+                    {purchaseForm.vendor_id && (
+                        <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-4">
+                            <div>
+                                <label className={labelCls}>Amount Paid (₹)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-base">₹</span>
+                                    <input type="number" step="0.01" min="0" placeholder="0.00"
+                                        value={purchaseForm.paid_amount}
+                                        onChange={e => setPurchaseForm(f => ({ ...f, paid_amount: e.target.value }))}
+                                        className="w-full h-12 pl-9 pr-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
+                                </div>
+                                {(() => {
+                                    const qty = material.unit?.toLowerCase().includes('bag') ? parseFloat(bagCount||'0') * parseFloat(bagKgEach||'0')
+                                              : material.unit?.toLowerCase().includes('carton') ? parseFloat(cartonCount||'0') * parseFloat(cartonUnitsEach||'0')
+                                              : parseFloat(purchaseForm.quantity || '0');
+                                    const total = qty * parseFloat(purchaseForm.price_per_unit || '0');
+                                    return total > 0 ? (
+                                        <button type="button"
+                                            onClick={() => setPurchaseForm(f => ({ ...f, paid_amount: total.toFixed(2) }))}
+                                            className="mt-2 text-[10px] font-black text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl active:bg-green-100 transition-colors">
+                                            Full Payment · ₹{total.toFixed(2)}
+                                        </button>
+                                    ) : null;
+                                })()}
+                            </div>
+                            {parseFloat(purchaseForm.paid_amount || '0') > 0 && (
+                                <div>
+                                    <label className={labelCls}>Payment Mode *</label>
+                                    <PaymentModeChips value={purchaseForm.payment_mode} onChange={v => setPurchaseForm(f => ({ ...f, payment_mode: v }))} />
+                                </div>
+                            )}
+                            <p className="text-[10px] text-slate-400 font-bold px-1">
+                                Purchases from the same vendor on the same day within 2 hours are merged into one bill automatically.
+                            </p>
+                        </div>
+                    )}
+
+                    <button type="submit" disabled={saving} className="w-full py-4.5 bg-primary-600 text-white font-black rounded-2xl shadow-xl shadow-primary-500/20 active:scale-95 transition-all disabled:opacity-60">
+                        {saving ? 'Saving…' : 'Confirm & Log Purchase'}
                     </button>
                 </form>
             </Modal>

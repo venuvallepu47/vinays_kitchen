@@ -626,7 +626,7 @@ export function MaterialDetail() {
                                         <button type="button"
                                             onClick={() => setPurchaseForm(f => ({ ...f, paid_amount: total.toFixed(2) }))}
                                             className="mt-2 text-[10px] font-black text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl active:bg-green-100 transition-colors">
-                                            Full Payment · ₹{total.toFixed(2)}
+                                            Full Payment · {formatCurrencyFull(total)}
                                         </button>
                                     ) : null;
                                 })()}

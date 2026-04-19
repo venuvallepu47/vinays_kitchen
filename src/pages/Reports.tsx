@@ -44,7 +44,7 @@ export function Reports() {
             </div>
             <div className="text-right shrink-0">
                 <p className="text-sm font-black text-slate-700">{formatCurrency(amount)}</p>
-                <p className="text-[10px] text-slate-400">{pct.toFixed(1)}%</p>
+                <p className="text-[10px] text-slate-400">{pct.toFixed(2)}%</p>
             </div>
         </div>
     );

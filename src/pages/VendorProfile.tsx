@@ -661,23 +661,30 @@ export function VendorProfile() {
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Qty</label>
-                                                <input type="number" step="0.01" min="0" placeholder="0" value={item.quantity}
-                                                    onChange={e => updateItem(idx, 'quantity', e.target.value)}
-                                                    className="w-full h-12 px-3 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm text-center" />
+                                        <div className="space-y-3 pt-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1">
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Quantity</label>
+                                                    <input type="number" step="0.01" min="0" placeholder="0" value={item.quantity}
+                                                        onChange={e => updateItem(idx, 'quantity', e.target.value)}
+                                                        className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Rate ₹</label>
+                                                    <input type="number" step="0.01" min="0" placeholder="0" value={item.price_per_unit}
+                                                        onChange={e => updateItem(idx, 'price_per_unit', e.target.value)}
+                                                        className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Rate ₹</label>
-                                                <input type="number" step="0.01" min="0" placeholder="0" value={item.price_per_unit}
-                                                    onChange={e => updateItem(idx, 'price_per_unit', e.target.value)}
-                                                    className="w-full h-12 px-3 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm text-center" />
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Total</label>
-                                                <div className="h-12 px-3 bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-200">
-                                                    <span className="text-base font-black text-slate-700">{formatCurrency(itemTotal(item))}</span>
+                                            
+                                            <div className="bg-slate-50 rounded-2xl p-4 flex items-center justify-between border border-slate-100">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Item Total</label>
+                                                <div className="text-right">
+                                                    <AmountDisplay 
+                                                        amount={itemTotal(item)} 
+                                                        className="text-base font-black text-slate-900 block"
+                                                        exactClassName="text-[10px] font-bold text-slate-400 block mt-0.5" 
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
@@ -706,7 +713,7 @@ export function VendorProfile() {
                                     <button type="button"
                                         onClick={() => setBillPaidAmount(billGrandTotal.toFixed(2))}
                                         className="mt-2 text-[10px] font-black text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl active:bg-green-100 transition-colors">
-                                        Pay Full · {formatCurrency(billGrandTotal)}
+                                        Pay Full · {formatCurrencyFull(billGrandTotal)}
                                     </button>
                                 )}
                             </div>
@@ -731,7 +738,13 @@ export function VendorProfile() {
                     <div className="bg-slate-900 rounded-3xl p-5 px-6 space-y-2 shadow-lg">
                         <div className="flex items-center justify-between">
                             <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>Bill Total</p>
-                            <p className="text-xl font-black text-white">{formatCurrency(billGrandTotal)}</p>
+                            <div className="text-right">
+                                <AmountDisplay 
+                                    amount={billGrandTotal} 
+                                    className="text-xl font-black text-white block"
+                                    exactClassName="text-[10px] font-medium text-white/50 block mt-0.5"
+                                />
+                            </div>
                         </div>
                         {parseFloat(billPaidAmount || '0') > 0 && (
                             <>

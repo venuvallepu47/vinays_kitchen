@@ -11,7 +11,7 @@ export function formatCurrency(amount: number | string): string {
     if (abs >= 100_000)
         return `${sign}₹${+(abs / 100_000).toFixed(2)}L`;
     if (abs >= 1_000)
-        return `${sign}₹${+(abs / 1_000).toFixed(1)}K`;
+        return `${sign}₹${+(abs / 1_000).toFixed(2)}K`;
     return `${sign}₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 

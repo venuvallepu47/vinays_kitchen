@@ -341,7 +341,7 @@ export function Materials() {
 
                                             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-1">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Item Total</label>
-                                                <AmountDisplay value={stockItemTotal(item)} className="text-2xl justify-start h-auto py-1" />
+                                                <AmountDisplay amount={stockItemTotal(item)} className="text-2xl justify-start h-auto py-1" />
                                             </div>
                                         </div>
                                     </div>
@@ -386,7 +386,7 @@ export function Materials() {
                         <div className="sticky bottom-0 bg-slate-900 -mx-4 -mb-4 p-5 flex items-center justify-between shadow-2xl z-10">
                             <div>
                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Bill Total</p>
-                                <AmountDisplay value={stockGrandTotal} className="text-2xl text-white justify-start h-auto py-0" />
+                                <AmountDisplay amount={stockGrandTotal} className="text-2xl text-white justify-start h-auto py-0" />
                             </div>
                             <button
                                 type="submit"

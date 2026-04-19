@@ -208,7 +208,7 @@
     height: 2.5rem !important;
     width: 2.5rem !important;
     display: flex !important;
-    items-center: center !important;
+    align-items: center !important;
     justify-content: center !important;
     border-radius: 0.75rem !important;
     transition: background-color 0.2s !important;

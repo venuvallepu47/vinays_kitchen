@@ -3,6 +3,7 @@ import { Plus, TrendingUp, CalendarDays, ChevronRight, ShoppingBag, AlertCircle 
 import { useEffect, useState } from 'react';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { formatCurrency, formatDate, getISTDate } from '../utils/format';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import api from '../utils/api';
 
 export function Dashboard() {
@@ -75,7 +76,7 @@ export function Dashboard() {
                         className="bg-white/10 rounded-2xl p-4 border border-white/10 text-left active:bg-white/20 transition-all active:scale-[0.98]"
                     >
                         <p className="text-amber-200 text-[10px] font-bold uppercase tracking-widest mb-1.5">Yesterday's Counter</p>
-                        <p className="text-white text-[22px] font-black leading-none">{formatCurrency(s.yesterday_sales || 0)}</p>
+                        <AmountDisplay amount={s.yesterday_sales || 0} className="text-white text-[22px] font-black leading-none block" exactClassName="block text-white/50 text-[10px] font-semibold mt-0.5 tabular-nums" />
                         <p className="text-amber-300/70 text-[10px] mt-1.5">total sales yesterday</p>
                     </button>
                     <button
@@ -86,7 +87,7 @@ export function Dashboard() {
                         className="bg-white/10 rounded-2xl p-4 border border-white/10 text-left active:bg-white/20 transition-all active:scale-[0.98]"
                     >
                         <p className="text-amber-200 text-[10px] font-bold uppercase tracking-widest mb-1.5">This Month</p>
-                        <p className="text-white text-[22px] font-black leading-none">{formatCurrency(s.month_sales || 0)}</p>
+                        <AmountDisplay amount={s.month_sales || 0} className="text-white text-[22px] font-black leading-none block" exactClassName="block text-white/50 text-[10px] font-semibold mt-0.5 tabular-nums" />
                         <p className="text-amber-300/70 text-[10px] mt-1.5">total revenue →</p>
                     </button>
                 </div>
@@ -143,14 +144,14 @@ export function Dashboard() {
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                             <div>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Cash</p>
-                                <p className="text-sm font-black text-slate-900">{formatCurrency(s.cash_sales || 0)}</p>
+                                <AmountDisplay amount={s.cash_sales || 0} className="text-sm font-black text-slate-900 block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
                             </div>
                         </div>
                         <div className="w-[1px] h-8 bg-slate-200" />
                         <div className="flex items-center gap-2.5 text-right">
                             <div>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">UPI Payments</p>
-                                <p className="text-sm font-black text-slate-900">{formatCurrency(s.upi_sales || 0)}</p>
+                                <AmountDisplay amount={s.upi_sales || 0} className="text-sm font-black text-slate-900 block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
                             </div>
                             <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
                         </div>

@@ -4,6 +4,7 @@ import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { formatCurrency, formatDate, formatDateInput } from '../utils/format';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import { useToast } from '../contexts/ToastContext';
 import api from '../utils/api';
 
@@ -84,7 +85,9 @@ export function Salaries() {
             {/* Header / Stats */}
             <div className="bg-success-600 rounded-3xl p-6 text-white shadow-lg shadow-success-200">
                 <p className="text-xs font-bold text-success-100 uppercase tracking-widest mb-1 opacity-80">Total Payments</p>
-                <p className="text-3xl font-black">{formatCurrency(totalPaid)}</p>
+                <p className="text-3xl font-black">
+                    <AmountDisplay amount={totalPaid} className="block" exactClassName="block text-white/50 text-[11px] font-semibold mt-0.5 tabular-nums" />
+                </p>
                 <div className="mt-4 flex items-center gap-2 text-xs font-medium text-success-100">
                     <Banknote size={14} />
                     <span>Showing {filtered.length} recent transactions</span>

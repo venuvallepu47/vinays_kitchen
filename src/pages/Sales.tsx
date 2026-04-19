@@ -6,6 +6,7 @@ import { ListSkeleton } from '../components/ui/Skeleton';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { formatCurrency, formatDate, today } from '../utils/format';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import { useToast } from '../contexts/ToastContext';
 import { cn } from '../utils/cn';
 import api from '../utils/api';
@@ -181,7 +182,9 @@ export function Sales() {
                 <div className="px-4 space-y-3">
                     <div className="flex items-center justify-between mb-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{filtered.length} Entries</p>
-                        <p className="text-sm font-black text-slate-900">{formatCurrency(filtered.reduce((sum, s) => sum + parseFloat(s.cash_amount) + parseFloat(s.upi_amount), 0))}</p>
+                        <p className="text-sm font-black text-slate-900 text-right">
+                            <AmountDisplay amount={filtered.reduce((sum, s) => sum + parseFloat(s.cash_amount) + parseFloat(s.upi_amount), 0)} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                        </p>
                     </div>
                     {filtered.map(sale => {
                         const total = parseFloat(sale.cash_amount) + parseFloat(sale.upi_amount);

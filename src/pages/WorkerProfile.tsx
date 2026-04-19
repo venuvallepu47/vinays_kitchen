@@ -5,6 +5,7 @@ import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { formatCurrency, formatDate, today, formatDateInput } from '../utils/format';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import { useToast } from '../contexts/ToastContext';
 import { TopBar } from '../components/layout/TopBar';
 import { cn } from '../utils/cn';
@@ -135,11 +136,15 @@ export function WorkerProfile() {
                             </div>
                             <div className="bg-success-50 rounded-xl p-3 text-center">
                                 <p className="text-[10px] text-success-600 font-bold uppercase">Earned</p>
-                                <p className="text-base font-black text-success-700 mt-1">{formatCurrency(earned)}</p>
+                                <p className="text-base font-black text-success-700 mt-1">
+                                    <AmountDisplay amount={earned} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                                </p>
                             </div>
                             <div className={cn('rounded-xl p-3 text-center', balance > 0 ? 'bg-danger-50' : 'bg-success-50')}>
                                 <p className={cn('text-[10px] font-bold uppercase', balance > 0 ? 'text-danger-600' : 'text-success-600')}>Balance</p>
-                                <p className={cn('text-base font-black mt-1', balance > 0 ? 'text-danger-700' : 'text-success-700')}>{formatCurrency(Math.abs(balance))}</p>
+                                <p className={cn('text-base font-black mt-1', balance > 0 ? 'text-danger-700' : 'text-success-700')}>
+                                    <AmountDisplay amount={Math.abs(balance)} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -227,7 +232,9 @@ export function WorkerProfile() {
             <Modal isOpen={showPay} onClose={() => setShowPay(false)} title="Record Salary Payment">
                 <div className="mb-4 bg-slate-100/50 rounded-2xl p-4 flex justify-between items-center border border-slate-200/50 shadow-inner">
                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Total Balance Due</p>
-                    <p className={cn('text-lg font-black', balance > 0 ? 'text-danger-600' : 'text-success-600')}>{formatCurrency(Math.abs(balance))}</p>
+                    <p className={cn('text-lg font-black text-right', balance > 0 ? 'text-danger-600' : 'text-success-600')}>
+                        <AmountDisplay amount={Math.abs(balance)} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                    </p>
                 </div>
                 <form onSubmit={handlePay} className="space-y-5">
                     <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-5">

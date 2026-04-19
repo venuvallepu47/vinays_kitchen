@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency, getISTDate } from '../utils/format';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import { cn } from '../utils/cn';
 import api from '../utils/api';
 
@@ -107,8 +108,8 @@ export function Reports() {
                         <p className="text-[11px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">
                              Business Net {isProfitable ? 'Profit' : 'Loss'}
                         </p>
-                        <p className="text-4xl font-black tracking-tight mb-2">
-                            {formatCurrency(Math.abs(report.net_profit))}
+                        <p className="text-4xl font-black tracking-tight mb-1">
+                            <AmountDisplay amount={Math.abs(report.net_profit)} className="block" exactClassName="block text-white/50 text-[11px] font-semibold mt-1 tabular-nums" />
                         </p>
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/10 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">
                             {MONTHS[month-1]} {year} Performance
@@ -122,16 +123,22 @@ export function Reports() {
                                 <TrendingUp size={18} className="text-emerald-600" />
                             </div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Revenue</p>
-                            <p className="text-lg font-black text-slate-900 mb-4">{formatCurrency(report.total_sales)}</p>
+                            <p className="text-lg font-black text-slate-900 mb-4">
+                                <AmountDisplay amount={report.total_sales} className="block" exactClassName="block text-[10px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                            </p>
                             
                             <div className="w-full space-y-2 pt-3 border-t border-slate-50">
                                 <div className="flex justify-between items-center text-[10px] font-bold">
                                     <span className="text-slate-400">CASH</span>
-                                    <span className="text-slate-700">{formatCurrency(report.cash_sales || 0)}</span>
+                                    <span className="text-slate-700 text-right">
+                                        <AmountDisplay amount={report.cash_sales || 0} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center text-[10px] font-bold">
                                     <span className="text-slate-400">UPI QR</span>
-                                    <span className="text-slate-700">{formatCurrency(report.upi_sales || 0)}</span>
+                                    <span className="text-slate-700 text-right">
+                                        <AmountDisplay amount={report.upi_sales || 0} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -141,7 +148,9 @@ export function Reports() {
                                 <TrendingDown size={18} className="text-rose-600" />
                             </div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Costs</p>
-                            <p className="text-lg font-black text-slate-900 mb-4">{formatCurrency(report.total_costs)}</p>
+                            <p className="text-lg font-black text-slate-900 mb-4">
+                                <AmountDisplay amount={report.total_costs} className="block" exactClassName="block text-[10px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                            </p>
                             
                             <p className="text-[10px] text-slate-300 font-bold italic leading-tight px-1">
                                 All operating costs for this period.

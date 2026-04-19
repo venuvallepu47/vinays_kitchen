@@ -5,6 +5,7 @@ import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { ListSkeleton } from '../components/ui/Skeleton';
 import { formatCurrency, formatDate, today, formatDateInput } from '../utils/format';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import { useToast } from '../contexts/ToastContext';
 import api from '../utils/api';
 
@@ -101,7 +102,9 @@ export function Expenses() {
             <div className="px-4 pt-4">
                 <div className="bg-danger-600 rounded-3xl p-6 text-white shadow-lg shadow-danger-100">
                     <p className="text-xs font-bold text-danger-100 uppercase tracking-widest mb-1 opacity-80">Total Expenses</p>
-                    <p className="text-3xl font-black">{formatCurrency(totalExpenses)}</p>
+                    <p className="text-3xl font-black">
+                        <AmountDisplay amount={totalExpenses} className="block" exactClassName="block text-white/50 text-[11px] font-semibold mt-0.5 tabular-nums" />
+                    </p>
                     <div className="mt-4 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs font-medium text-danger-100">
                             <CreditCard size={14} />

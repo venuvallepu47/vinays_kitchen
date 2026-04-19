@@ -8,6 +8,7 @@ import {
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { formatCurrency, formatCurrencyFull, formatDate, today } from '../utils/format';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import { useToast } from '../contexts/ToastContext';
 import { TopBar } from '../components/layout/TopBar';
 import { DateInput } from '../components/ui/DateInput';
@@ -372,7 +373,9 @@ export function VendorProfile() {
                     <div className="mx-4 mt-4 bg-red-600 rounded-2xl px-5 py-4 flex items-center justify-between shadow-lg shadow-red-500/20">
                         <div>
                             <p className="text-[10px] font-black text-red-200 uppercase tracking-widest mb-1">Outstanding Due</p>
-                            <p className="text-2xl font-black text-white">{formatCurrency(summary.outstanding)}</p>
+                            <p className="text-2xl font-black text-white">
+                                <AmountDisplay amount={summary.outstanding} className="block" exactClassName="block text-white/50 text-[10px] font-semibold mt-0.5 tabular-nums" />
+                            </p>
                         </div>
                         <button onClick={() => setShowPayment(true)}
                             className="bg-white text-red-600 text-xs font-black px-4 py-2.5 rounded-xl active:scale-95 transition-all shadow-sm">
@@ -391,16 +394,20 @@ export function VendorProfile() {
                 <div className="px-4 pt-3 grid grid-cols-3 gap-2">
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 text-center">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Credit</p>
-                        <p className="text-sm font-black text-orange-600">{formatCurrency(summary.totalCredit)}</p>
+                        <p className="text-sm font-black text-orange-600">
+                            <AmountDisplay amount={summary.totalCredit} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                        </p>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 text-center">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Paid</p>
-                        <p className="text-sm font-black text-green-600">{formatCurrency(summary.totalPaid)}</p>
+                        <p className="text-sm font-black text-green-600">
+                            <AmountDisplay amount={summary.totalPaid} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
+                        </p>
                     </div>
                     <div className={`rounded-2xl border shadow-sm p-3 text-center ${summary.outstanding > 0.01 ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance</p>
                         <p className={`text-sm font-black ${summary.outstanding > 0.01 ? 'text-red-600' : 'text-slate-400'}`}>
-                            {formatCurrency(Math.max(0, summary.outstanding))}
+                            <AmountDisplay amount={Math.max(0, summary.outstanding)} className="block" exactClassName="block text-[9px] font-semibold text-slate-400 mt-0.5 tabular-nums" />
                         </p>
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
-import { formatCurrency, formatDate, today, formatDateInput } from '../utils/format';
+import { formatCurrency, formatDate, formatDateInput } from '../utils/format';
 import { useToast } from '../contexts/ToastContext';
 import api from '../utils/api';
 

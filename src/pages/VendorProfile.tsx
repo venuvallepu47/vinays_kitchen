@@ -684,18 +684,20 @@ export function VendorProfile() {
                                             )}
                                         </div>
                                         <div className="space-y-3 pt-1">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex-1">
-                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Quantity</label>
-                                                    <input type="number" step="0.01" min="0" placeholder="0" value={item.quantity}
-                                                        onChange={e => updateItem(idx, 'quantity', e.target.value)}
-                                                        className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Rate ₹</label>
-                                                    <input type="number" step="0.01" min="0" placeholder="0" value={item.price_per_unit}
+                                            <div className="flex-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Quantity</label>
+                                                <input type="number" step="0.01" min="0" placeholder="0.00" value={item.quantity}
+                                                    onChange={e => updateItem(idx, 'quantity', e.target.value)}
+                                                    className="w-full h-14 px-4 bg-white border border-slate-200 rounded-2xl text-lg font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
+                                            </div>
+
+                                            <div className="flex-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Rate (Price per Unit) *</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-slate-400">₹</span>
+                                                    <input type="number" step="0.01" min="0" placeholder="0.00" value={item.price_per_unit}
                                                         onChange={e => updateItem(idx, 'price_per_unit', e.target.value)}
-                                                        className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
+                                                        className="w-full h-14 pl-8 pr-4 bg-white border border-slate-200 rounded-2xl text-lg font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
                                                 </div>
                                             </div>
                                             

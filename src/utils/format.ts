@@ -9,15 +9,16 @@ export function formatCurrency(amount: number | string): string {
 
     const truncate = (v: number, dec: number) => {
         const factor = Math.pow(10, dec);
-        return (Math.floor(v * factor) / factor).toFixed(dec);
+        // Using a tiny epsilon 1e-9 to prevent floating point jitter (like 16.9 becoming 16.8999...)
+        return (Math.floor(v * factor + 1e-9) / factor).toFixed(dec);
     };
 
     if (abs >= 10_000_000)
-        return `${sign}₹${+(truncate(abs / 10_000_000, 2))}Cr`;
+        return `${sign}₹${truncate(abs / 10_000_000, 2)}Cr`;
     if (abs >= 100_000)
-        return `${sign}₹${+(truncate(abs / 100_000, 2))}L`;
+        return `${sign}₹${truncate(abs / 100_000, 2)}L`;
     if (abs >= 1_000)
-        return `${sign}₹${+(truncate(abs / 1_000, 2))}K`;
+        return `${sign}₹${truncate(abs / 1_000, 2)}K`;
     
     return `${sign}₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }

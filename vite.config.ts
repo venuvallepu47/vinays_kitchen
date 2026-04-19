@@ -34,6 +34,11 @@ export default defineConfig({
         'icon-*.png',
       ],
       workbox: {
+        // New SW takes control of ALL open tabs immediately on deploy
+        skipWaiting: true,
+        clientsClaim: true,
+        // Delete every cache entry that belongs to a previous SW version
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
@@ -41,7 +46,8 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 5 }, // 5 min — always try network first; cache is only a fallback
+              networkTimeoutSeconds: 8,
             },
           },
         ],

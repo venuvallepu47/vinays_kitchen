@@ -9,6 +9,7 @@ import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { formatCurrency, formatCurrencyFull, formatDate, today } from '../utils/format';
 import { AmountDisplay } from '../components/ui/AmountDisplay';
+import { Combobox } from '../components/ui/Combobox';
 import { useToast } from '../contexts/ToastContext';
 import { TopBar } from '../components/layout/TopBar';
 import { DateInput } from '../components/ui/DateInput';
@@ -243,15 +244,32 @@ export function VendorProfile() {
         e.preventDefault();
         const valid = billItems.filter(it => it.material_id && parseFloat(it.quantity) > 0 && parseFloat(it.price_per_unit) > 0);
         if (valid.length === 0) { toast('Add at least one valid item', 'error'); return; }
+        
         setSaving(true);
         try {
+            // Check for manual materials (non-numeric IDs)
+            const items = await Promise.all(valid.map(async (it) => {
+                // If it's a number (string-wrapped or actual number), it's existing
+                if (!isNaN(Number(it.material_id))) {
+                    return { ...it, material_id: Number(it.material_id) };
+                }
+                
+                // Otherwise it's a manual name — create it first
+                const newMatRes = await api.post('/materials', {
+                    name: it.material_id,
+                    unit: 'units', // default for manual entry
+                });
+                return { ...it, material_id: newMatRes.data.id };
+            }));
+
             const payload = {
                 bill_date: billDate,
-                items: valid,
+                items: items,
                 paid_amount: parseFloat(billPaidAmount || '0') || 0,
                 payment_mode: billPayMode,
                 notes: billNotes,
             };
+            
             if (editBillId) {
                 await api.put(`/vendor-bills/${editBillId}`, payload);
                 toast('Purchase updated');
@@ -262,7 +280,10 @@ export function VendorProfile() {
             setShowPurchase(false);
             resetPurchaseForm();
             fetchAll();
-        } catch { toast('Failed to save purchase', 'error'); }
+        } catch (err) { 
+            console.error('Save bill error:', err);
+            toast('Failed to save purchase', 'error'); 
+        }
         finally { setSaving(false); }
     };
 
@@ -648,12 +669,13 @@ export function VendorProfile() {
                                 {billItems.map((item, idx) => (
                                     <div key={idx} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                                         <div className="flex gap-2">
-                                            <select value={item.material_id}
-                                                onChange={e => updateItem(idx, 'material_id', e.target.value)}
-                                                className="flex-1 h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm">
-                                                <option value="">-- Choose Material --</option>
-                                                {materials.map(m => <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>)}
-                                            </select>
+                                            <Combobox 
+                                                className="flex-1"
+                                                options={materials}
+                                                value={item.material_id}
+                                                placeholder="Choose Material..."
+                                                onChange={(val) => updateItem(idx, 'material_id', String(val))}
+                                            />
                                             {billItems.length > 1 && (
                                                 <button type="button" onClick={() => removeItem(idx)}
                                                     className="w-12 h-12 rounded-2xl bg-red-50 text-red-400 flex items-center justify-center shrink-0 active:bg-red-100 border border-red-100 transition-colors">

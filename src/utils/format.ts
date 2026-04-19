@@ -1,17 +1,24 @@
 const IST = 'Asia/Kolkata';
 
-// Compact Indian-system formatter: ₹1.23Cr / ₹12.5L / ₹1.2K / ₹999
+// Compact Indian-system formatter: ₹1.23Cr / ₹12.5L / ₹1.98K / ₹999
 export function formatCurrency(amount: number | string): string {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
     if (isNaN(num)) return '₹0';
     const abs  = Math.abs(num);
     const sign = num < 0 ? '-' : '';
+
+    const truncate = (v: number, dec: number) => {
+        const factor = Math.pow(10, dec);
+        return (Math.floor(v * factor) / factor).toFixed(dec);
+    };
+
     if (abs >= 10_000_000)
-        return `${sign}₹${+( abs / 10_000_000).toFixed(2)}Cr`;
+        return `${sign}₹${+(truncate(abs / 10_000_000, 2))}Cr`;
     if (abs >= 100_000)
-        return `${sign}₹${+(abs / 100_000).toFixed(2)}L`;
+        return `${sign}₹${+(truncate(abs / 100_000, 2))}L`;
     if (abs >= 1_000)
-        return `${sign}₹${+(abs / 1_000).toFixed(2)}K`;
+        return `${sign}₹${+(truncate(abs / 1_000, 2))}K`;
+    
     return `${sign}₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 

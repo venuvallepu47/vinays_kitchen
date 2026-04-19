@@ -6,6 +6,7 @@ import { ListSkeleton } from '../components/ui/Skeleton';
 import { Modal } from '../components/ui/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { formatCurrency, today } from '../utils/format';
+import { Combobox } from '../components/ui/Combobox';
 import { cn } from '../utils/cn';
 import api from '../utils/api';
 
@@ -95,8 +96,20 @@ export function Materials() {
         
         setSaving(true);
         try {
+            // Check for manual materials
+            const items = await Promise.all(valid.map(async (it) => {
+                if (!isNaN(Number(it.material_id))) {
+                    return { ...it, material_id: Number(it.material_id) };
+                }
+                const newMatRes = await api.post('/materials', {
+                    name: it.material_id,
+                    unit: 'units',
+                });
+                return { ...it, material_id: newMatRes.data.id };
+            }));
+
             // Group items by vendor_id
-            const vendorGroups = valid.reduce((acc: Record<string, StockItem[]>, it) => {
+            const vendorGroups = items.reduce((acc: Record<string, any[]>, it) => {
                 const vid = it.vendor_id || 'unlinked';
                 if (!acc[vid]) acc[vid] = [];
                 acc[vid].push(it);
@@ -105,15 +118,12 @@ export function Materials() {
 
             const promises = [];
             const vids = Object.keys(vendorGroups);
-            
-            // Distribute paid_amount: Apply full amount to the first vendor group found
             let remainingPaid = parseFloat(stockPaidAmount || '0') || 0;
 
             for (const vid of vids) {
-                const items = vendorGroups[vid];
+                const groupItems = vendorGroups[vid];
                 if (vid === 'unlinked') {
-                    // Direct purchases (no payment tracking)
-                    for (const it of items) {
+                    for (const it of groupItems) {
                         promises.push(api.post('/purchases', {
                             material_id: it.material_id,
                             vendor_id: null,
@@ -123,13 +133,11 @@ export function Materials() {
                         }));
                     }
                 } else {
-                    // Create Vendor Bill (tracks payment)
                     const billPaid = remainingPaid;
-                    remainingPaid = 0; // applied all to first
-                    
+                    remainingPaid = 0;
                     promises.push(api.post(`/vendors/${vid}/bills`, {
                         bill_date: stockDate,
-                        items: items.map(it => ({
+                        items: groupItems.map(it => ({
                             material_id: it.material_id,
                             quantity: it.quantity,
                             price_per_unit: it.price_per_unit
@@ -292,12 +300,13 @@ export function Materials() {
                                 {stockItems.map((item, idx) => (
                                     <div key={idx} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                                         <div className="flex gap-2">
-                                            <select value={item.material_id}
-                                                onChange={e => updateStockItem(idx, 'material_id', e.target.value)}
-                                                className="flex-1 h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm">
-                                                <option value="">-- Choose Material --</option>
-                                                {materials.map(m => <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>)}
-                                            </select>
+                                            <Combobox 
+                                                className="flex-1"
+                                                options={materials}
+                                                value={item.material_id}
+                                                placeholder="Search Material..."
+                                                onChange={(val) => updateStockItem(idx, 'material_id', String(val))}
+                                            />
                                             {stockItems.length > 1 && (
                                                 <button type="button" onClick={() => removeStockItem(idx)}
                                                     className="w-12 h-12 rounded-2xl bg-red-50 text-red-400 flex items-center justify-center shrink-0 active:bg-red-100 border border-red-100 transition-colors">

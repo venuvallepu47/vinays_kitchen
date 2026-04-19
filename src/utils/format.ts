@@ -14,11 +14,11 @@ export function formatCurrency(amount: number | string): string {
     };
 
     if (abs >= 10_000_000)
-        return `${sign}₹${truncate(abs / 10_000_000, 2)}Cr`;
+        return `${sign}₹${truncate(abs / 10_000_000, 2)} Cr`;
     if (abs >= 100_000)
-        return `${sign}₹${truncate(abs / 100_000, 2)}L`;
+        return `${sign}₹${truncate(abs / 100_000, 2)} L`;
     if (abs >= 1_000)
-        return `${sign}₹${truncate(abs / 1_000, 2)}K`;
+        return `${sign}₹${truncate(abs / 1_000, 2)} K`;
     
     return `${sign}₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }

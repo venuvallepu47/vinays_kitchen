@@ -175,15 +175,23 @@ export const updateBill = async (req: Request, res: Response) => {
     }
 };
 
-// DELETE /vendor-bills/:id
+// DELETE /vendor-bills/:id — explicitly removes items + purchases then the bill
 export const deleteBill = async (req: Request, res: Response) => {
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
         const { id } = req.params;
-        // purchases with bill_id will cascade delete due to FK ON DELETE CASCADE
-        await pool.query('DELETE FROM vendor_bills WHERE id = $1', [id]);
+        await client.query('DELETE FROM vendor_bill_items WHERE bill_id=$1', [id]);
+        await client.query('DELETE FROM purchases WHERE bill_id=$1', [id]);
+        await client.query('DELETE FROM vendor_bills WHERE id=$1', [id]);
+        await client.query('COMMIT');
         res.json({ message: 'Bill deleted' });
     } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('deleteBill error:', err);
         res.status(500).json({ error: 'Failed to delete bill' });
+    } finally {
+        client.release();
     }
 };
 

@@ -112,14 +112,70 @@ export const getAllPurchases = async (req: Request, res: Response) => {
     }
 };
 
-// DELETE a purchase
+// DELETE a purchase — if it belongs to a bill, removes the bill item and recalculates the bill total
 export const deletePurchase = async (req: Request, res: Response) => {
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
         const { id } = req.params;
-        await pool.query('DELETE FROM purchases WHERE id=$1', [id]);
+
+        const purchaseRes = await client.query(
+            'SELECT * FROM purchases WHERE id=$1',
+            [id]
+        );
+        if (purchaseRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Purchase not found' });
+        }
+        const purchase = purchaseRes.rows[0];
+
+        // Delete the purchase row
+        await client.query('DELETE FROM purchases WHERE id=$1', [id]);
+
+        if (purchase.bill_id) {
+            // Remove the matching vendor_bill_items row (match by bill + material + qty + price)
+            await client.query(
+                `DELETE FROM vendor_bill_items
+                 WHERE id = (
+                     SELECT id FROM vendor_bill_items
+                     WHERE bill_id=$1 AND material_id=$2
+                       AND quantity::numeric = $3::numeric
+                       AND price_per_unit::numeric = $4::numeric
+                     LIMIT 1
+                 )`,
+                [purchase.bill_id, purchase.material_id, purchase.quantity, purchase.price_per_unit]
+            );
+
+            // Check remaining items in the bill
+            const remaining = await client.query(
+                'SELECT COALESCE(SUM(total_amount),0) AS new_total, COUNT(*) AS item_count FROM vendor_bill_items WHERE bill_id=$1',
+                [purchase.bill_id]
+            );
+            const { new_total, item_count } = remaining.rows[0];
+
+            if (parseInt(item_count) === 0) {
+                // No items left — delete the bill entirely
+                await client.query('DELETE FROM vendor_bills WHERE id=$1', [purchase.bill_id]);
+            } else {
+                // Recalculate bill total; cap paid_amount so it never exceeds new total
+                await client.query(
+                    `UPDATE vendor_bills
+                     SET total_amount = $1,
+                         paid_amount  = LEAST(paid_amount, $1)
+                     WHERE id = $2`,
+                    [new_total, purchase.bill_id]
+                );
+            }
+        }
+
+        await client.query('COMMIT');
         res.json({ message: 'Purchase deleted' });
     } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('deletePurchase error:', err);
         res.status(500).json({ error: 'Failed to delete purchase' });
+    } finally {
+        client.release();
     }
 };
 

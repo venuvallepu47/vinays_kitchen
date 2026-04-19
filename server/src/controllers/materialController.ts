@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
+import { getISTDateString } from '../utils/date';
 
 // GET all materials with current stock
 export const getMaterials = async (req: Request, res: Response) => {
@@ -86,7 +87,7 @@ export const logPurchase = async (req: Request, res: Response) => {
         const result = await pool.query(
             `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, notes)
              VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [material_id, vendor_id || null, quantity, price_per_unit, total_amount, purchase_date || new Date(), notes]
+            [material_id, vendor_id || null, quantity, price_per_unit, total_amount, purchase_date || getISTDateString(), notes]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -146,7 +147,7 @@ export const logUsage = async (req: Request, res: Response) => {
         const result = await pool.query(
             `INSERT INTO material_usage (material_id, quantity_used, usage_date, notes)
              VALUES ($1, $2, $3, $4) RETURNING *`,
-            [material_id, quantity_used, usage_date || new Date(), notes]
+            [material_id, quantity_used, usage_date || getISTDateString(), notes]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -208,15 +209,21 @@ export const purchaseMaterial = async (req: Request, res: Response) => {
     }
 
     const item_total = qty * price;
+    const bill_date  = purchase_date || getISTDateString();
 
     // No vendor — direct purchase, no bill
     if (!vendor_id) {
-        const result = await pool.query(
-            `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, notes)
-             VALUES ($1, NULL, $2, $3, $4, $5, $6) RETURNING *`,
-            [material_id, qty, price, item_total, purchase_date, notes || null]
-        );
-        return res.status(201).json({ merged: false, purchase: result.rows[0] });
+        try {
+            const result = await pool.query(
+                `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, notes)
+                 VALUES ($1, NULL, $2, $3, $4, $5, $6) RETURNING *`,
+                [material_id, qty, price, item_total, bill_date, notes || null]
+            );
+            return res.status(201).json({ merged: false, purchase: result.rows[0] });
+        } catch (err: any) {
+            console.error('purchaseMaterial (no vendor) error:', err);
+            return res.status(500).json({ error: 'Failed to record purchase' });
+        }
     }
 
     const client = await pool.connect();
@@ -231,7 +238,7 @@ export const purchaseMaterial = async (req: Request, res: Response) => {
                AND created_at >= NOW() - INTERVAL '2 hours'
              ORDER BY created_at DESC
              LIMIT 1`,
-            [vendor_id, purchase_date]
+            [vendor_id, bill_date]
         );
 
         let bill_id: number;
@@ -243,13 +250,14 @@ export const purchaseMaterial = async (req: Request, res: Response) => {
             bill_id = bill.id;
             merged  = true;
 
-            const new_total = parseFloat(bill.total_amount) + item_total;
-            const added_paid = Math.min(parseFloat(paid_amount || '0'), item_total);
-            const new_paid  = Math.min(parseFloat(bill.paid_amount) + added_paid, new_total);
+            const new_total   = parseFloat(bill.total_amount) + item_total;
+            const added_paid  = Math.min(parseFloat(paid_amount || '0'), item_total);
+            const new_paid    = Math.min(parseFloat(bill.paid_amount) + added_paid, new_total);
+            const new_mode    = payment_mode || bill.payment_mode || 'cash';
 
             await client.query(
-                `UPDATE vendor_bills SET total_amount = $1, paid_amount = $2 WHERE id = $3`,
-                [new_total, new_paid, bill_id]
+                `UPDATE vendor_bills SET total_amount = $1, paid_amount = $2, payment_mode = $3 WHERE id = $4`,
+                [new_total, new_paid, new_mode, bill_id]
             );
         } else {
             // Create new bill
@@ -257,7 +265,7 @@ export const purchaseMaterial = async (req: Request, res: Response) => {
             const billRes = await client.query(
                 `INSERT INTO vendor_bills (vendor_id, bill_date, total_amount, paid_amount, payment_mode, notes)
                  VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-                [vendor_id, purchase_date, item_total, paid, payment_mode || 'cash', notes || null]
+                [vendor_id, bill_date, item_total, paid, payment_mode || 'cash', notes || null]
             );
             bill_id = billRes.rows[0].id;
         }
@@ -273,7 +281,7 @@ export const purchaseMaterial = async (req: Request, res: Response) => {
         await client.query(
             `INSERT INTO purchases (material_id, vendor_id, quantity, price_per_unit, total_amount, purchase_date, notes, bill_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [material_id, vendor_id, qty, price, item_total, purchase_date, notes || null, bill_id]
+            [material_id, vendor_id, qty, price, item_total, bill_date, notes || null, bill_id]
         );
 
         await client.query('COMMIT');

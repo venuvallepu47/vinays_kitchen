@@ -27,8 +27,8 @@ export function Sales() {
     
     // Filters
     const [filterType, setFilterType] = useState<'month' | 'date' | 'all'>(initialMonth ? 'month' : 'all');
-    const [filterMonth, setFilterMonth] = useState(initialMonth ? parseInt(initialMonth) : new Date().getMonth() + 1);
-    const [filterYear, setFilterYear] = useState(initialYear ? parseInt(initialYear) : new Date().getFullYear());
+    const [filterMonth, setFilterMonth] = useState(initialMonth ? parseInt(initialMonth) : parseInt(today().split('-')[1]));
+    const [filterYear, setFilterYear] = useState(initialYear ? parseInt(initialYear) : parseInt(today().split('-')[0]));
     const [filterDate, setFilterDate] = useState(today());
 
     // CRUD state

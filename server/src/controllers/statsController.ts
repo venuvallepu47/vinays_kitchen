@@ -68,14 +68,15 @@ export const getProfitLoss = async (req: Request, res: Response) => {
         const params: any[] = [];
 
         if (period === 'daily') {
-            const d = date || new Date().toISOString().split('T')[0];
+            const d = date || getISTDateString();
             whereSales = `WHERE date = $1`;
             wherePurchases = `WHERE purchase_date::DATE = $1`;
             whereSalaries = `WHERE payment_date::DATE = $1`;
             whereExpenses = `WHERE expense_date::DATE = $1`;
             params.push(d);
         } else if (period === 'yearly') {
-            const y = year || new Date().getFullYear();
+            const istToday = getISTDateString();
+            const y = year || parseInt(istToday.split('-')[0]);
             whereSales = `WHERE EXTRACT(YEAR FROM date) = $1`;
             wherePurchases = `WHERE EXTRACT(YEAR FROM purchase_date) = $1`;
             whereSalaries = `WHERE EXTRACT(YEAR FROM payment_date) = $1`;
@@ -83,8 +84,9 @@ export const getProfitLoss = async (req: Request, res: Response) => {
             params.push(y);
         } else {
             // monthly (default)
-            const m = month || new Date().getMonth() + 1;
-            const y = year || new Date().getFullYear();
+            const istToday = getISTDateString();
+            const m = month || parseInt(istToday.split('-')[1]);
+            const y = year || parseInt(istToday.split('-')[0]);
             whereSales = `WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2`;
             wherePurchases = `WHERE EXTRACT(MONTH FROM purchase_date) = $1 AND EXTRACT(YEAR FROM purchase_date) = $2`;
             whereSalaries = `WHERE EXTRACT(MONTH FROM payment_date) = $1 AND EXTRACT(YEAR FROM payment_date) = $2`;

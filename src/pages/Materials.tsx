@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ListSkeleton } from '../components/ui/Skeleton';
 import { Modal } from '../components/ui/Modal';
 import { useToast } from '../contexts/ToastContext';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, today } from '../utils/format';
 import { cn } from '../utils/cn';
 import api from '../utils/api';
 
@@ -32,7 +32,7 @@ function PaymentModeChips({ value, onChange }: { value: string; onChange: (v: st
     );
 }
 
-const TODAY = new Date().toISOString().split('T')[0];
+const TODAY = today();
 const FALLBACK_UNITS = ['kg', 'g', 'ltr', 'ml', 'pieces', 'packets', 'bundles', 'dozens', 'Bags', 'Cartons'];
 type StockItem = { material_id: string; vendor_id: string; quantity: string; price_per_unit: string };
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
-import { formatCurrency, formatDate, today } from '../utils/format';
+import { formatCurrency, formatDate, today, formatDateInput } from '../utils/format';
 import { useToast } from '../contexts/ToastContext';
 import api from '../utils/api';
 
@@ -54,7 +54,7 @@ export function Salaries() {
         setEditForm({ 
             id: p.id, 
             amount: p.amount, 
-            payment_date: formatDate(p.payment_date).split('/').reverse().join('-') || today(), 
+            payment_date: formatDateInput(p.payment_date),
             notes: p.notes || '' 
         });
         setShowEdit(true);

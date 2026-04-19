@@ -7,13 +7,13 @@ import {
 } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
-import { formatCurrency, formatDate } from '../utils/format';
+import { formatCurrency, formatDate, today } from '../utils/format';
 import { useToast } from '../contexts/ToastContext';
 import { TopBar } from '../components/layout/TopBar';
 import { DateInput } from '../components/ui/DateInput';
 import api from '../utils/api';
 
-const TODAY = new Date().toISOString().split('T')[0];
+const TODAY = today();
 
 type BillItem = { material_id: string; quantity: string; price_per_unit: string };
 type Bill = {

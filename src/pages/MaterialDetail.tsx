@@ -151,7 +151,10 @@ export function MaterialDetail() {
             setPurchaseForm({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
             setBagCount(''); setBagKgEach(''); setCartonCount(''); setCartonUnitsEach('');
             fetchAll();
-        } catch { toast('Failed to log purchase', 'error'); }
+        } catch {
+            toast('Failed to log purchase', 'error');
+            setPurchaseForm(f => ({ ...f, paid_amount: '', payment_mode: 'cash' }));
+        }
         finally { setSaving(false); }
     };
 
@@ -513,12 +516,16 @@ export function MaterialDetail() {
             </main>
 
             {/* Log Purchase Modal */}
-            <Modal isOpen={showPurchase} onClose={() => setShowPurchase(false)} title="Log Material Purchase">
+            <Modal isOpen={showPurchase} onClose={() => {
+                setShowPurchase(false);
+                setPurchaseForm({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
+                setBagCount(''); setBagKgEach(''); setCartonCount(''); setCartonUnitsEach('');
+            }} title="Log Material Purchase">
                 <form onSubmit={handlePurchase} className="space-y-5 pt-3">
                     <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-5">
                         <div>
                             <label className={labelCls}>Supplier / Vendor</label>
-                            <select value={purchaseForm.vendor_id} onChange={e => setPurchaseForm(f => ({ ...f, vendor_id: e.target.value }))} className={inputCls}>
+                            <select value={purchaseForm.vendor_id} onChange={e => setPurchaseForm(f => ({ ...f, vendor_id: e.target.value, paid_amount: '', payment_mode: 'cash' }))} className={inputCls}>
                                 <option value="">General Purchase</option>
                                 {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                             </select>

@@ -179,20 +179,71 @@ export const deletePurchase = async (req: Request, res: Response) => {
     }
 };
 
-// PUT update a purchase
+// PUT update a purchase — if it belongs to a bill, keeps vendor_bill_items and vendor_bills in sync
 export const updatePurchase = async (req: Request, res: Response) => {
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
         const { id } = req.params;
         const { vendor_id, quantity, price_per_unit, purchase_date, notes } = req.body;
-        const total_amount = parseFloat(quantity) * parseFloat(price_per_unit);
-        const result = await pool.query(
-            `UPDATE purchases SET vendor_id=$1, quantity=$2, price_per_unit=$3, total_amount=$4, purchase_date=$5, notes=$6 
+        const qty         = parseFloat(quantity);
+        const price       = parseFloat(price_per_unit);
+        const total_amount = qty * price;
+
+        // Fetch the current state so we know the old qty/price for matching
+        const existing = await client.query('SELECT * FROM purchases WHERE id=$1', [id]);
+        if (existing.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Purchase not found' });
+        }
+        const prev = existing.rows[0];
+
+        // Update the purchase row
+        const result = await client.query(
+            `UPDATE purchases
+             SET vendor_id=$1, quantity=$2, price_per_unit=$3, total_amount=$4, purchase_date=$5, notes=$6
              WHERE id=$7 RETURNING *`,
-            [vendor_id || null, quantity, price_per_unit, total_amount, purchase_date, notes, id]
+            [vendor_id || null, qty, price, total_amount, purchase_date, notes, id]
         );
+
+        if (prev.bill_id) {
+            // Update the matching vendor_bill_items row (matched by old qty + price to avoid touching sibling items)
+            await client.query(
+                `UPDATE vendor_bill_items
+                 SET quantity=$1, price_per_unit=$2, total_amount=$3
+                 WHERE id = (
+                     SELECT id FROM vendor_bill_items
+                     WHERE bill_id=$4 AND material_id=$5
+                       AND quantity::numeric    = $6::numeric
+                       AND price_per_unit::numeric = $7::numeric
+                     LIMIT 1
+                 )`,
+                [qty, price, total_amount,
+                 prev.bill_id, prev.material_id, prev.quantity, prev.price_per_unit]
+            );
+
+            // Recalculate bill total from actual items; cap paid_amount
+            const totals = await client.query(
+                `SELECT COALESCE(SUM(total_amount), 0) AS new_total FROM vendor_bill_items WHERE bill_id=$1`,
+                [prev.bill_id]
+            );
+            const new_total = totals.rows[0].new_total;
+            await client.query(
+                `UPDATE vendor_bills
+                 SET total_amount=$1, paid_amount=LEAST(paid_amount,$1)
+                 WHERE id=$2`,
+                [new_total, prev.bill_id]
+            );
+        }
+
+        await client.query('COMMIT');
         res.json(result.rows[0]);
     } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('updatePurchase error:', err);
         res.status(500).json({ error: 'Failed to update purchase' });
+    } finally {
+        client.release();
     }
 };
 

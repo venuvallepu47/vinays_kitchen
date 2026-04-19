@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, AlertTriangle, ChevronRight, ShoppingCart, Minus, Banknote, CreditCard, Building2 } from 'lucide-react';
+import { Plus, Search, Package, AlertTriangle, ChevronRight, ShoppingCart, Minus, Banknote, CreditCard, Building2, Check } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { useNavigate } from 'react-router-dom';
 import { ListSkeleton } from '../components/ui/Skeleton';
+import { AmountDisplay } from '../components/ui/AmountDisplay';
 import { Modal } from '../components/ui/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { formatCurrency, today } from '../utils/format';
@@ -320,24 +321,27 @@ export function Materials() {
                                             <option value="">-- No Vendor (unlinked) --</option>
                                             {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                                         </select>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">How much? *</label>
-                                                <input type="number" step="0.01" min="0" placeholder="0" value={item.quantity}
+                                        <div className="space-y-3">
+                                            <div className="flex-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Quantity (How much?) *</label>
+                                                <input type="number" step="0.01" min="0" placeholder="0.00" value={item.quantity}
                                                     onChange={e => updateStockItem(idx, 'quantity', e.target.value)}
-                                                    className="w-full h-12 px-3 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm text-center" />
+                                                    className="w-full h-14 px-4 bg-white border border-slate-200 rounded-2xl text-lg font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
                                             </div>
-                                            <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Rate / Unit *</label>
-                                                <input type="number" step="0.01" min="0" placeholder="0" value={item.price_per_unit}
-                                                    onChange={e => updateStockItem(idx, 'price_per_unit', e.target.value)}
-                                                    className="w-full h-12 px-3 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm text-center" />
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Total</label>
-                                                <div className="h-12 px-3 bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-200">
-                                                    <span className="text-base font-black text-slate-700">{formatCurrency(stockItemTotal(item))}</span>
+
+                                            <div className="flex-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Rate (Price per Unit) *</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-slate-400">₹</span>
+                                                    <input type="number" step="0.01" min="0" placeholder="0.00" value={item.price_per_unit}
+                                                        onChange={e => updateStockItem(idx, 'price_per_unit', e.target.value)}
+                                                        className="w-full h-14 pl-8 pr-4 bg-white border border-slate-200 rounded-2xl text-lg font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
                                                 </div>
+                                            </div>
+
+                                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Item Total</label>
+                                                <AmountDisplay value={stockItemTotal(item)} className="text-2xl justify-start h-auto py-1" />
                                             </div>
                                         </div>
                                     </div>
@@ -379,20 +383,28 @@ export function Materials() {
                         )}
                     </div>
 
-                    <div className="bg-slate-900 rounded-3xl p-5 px-6 flex items-center justify-between shadow-lg">
-                        <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest mb-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Estimated Total</p>
-                            <p className="text-2xl font-black text-white leading-none">{formatCurrency(stockGrandTotal)}</p>
+                        <div className="sticky bottom-0 bg-slate-900 -mx-4 -mb-4 p-5 flex items-center justify-between shadow-2xl z-10">
+                            <div>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Bill Total</p>
+                                <AmountDisplay value={stockGrandTotal} className="text-2xl text-white justify-start h-auto py-0" />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="h-14 px-8 bg-primary-500 text-white font-black rounded-2xl shadow-lg shadow-primary-500/20 active:scale-95 transition-all text-lg disabled:opacity-50 flex items-center gap-3">
+                                {saving ? (
+                                    <>
+                                        <div className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Saving</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={24} strokeWidth={3} />
+                                        <span>Save</span>
+                                    </>
+                                )}
+                            </button>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                            <span className="text-white opacity-50 font-black">₹</span>
-                        </div>
-                    </div>
-
-                    <button type="submit" disabled={saving}
-                        className="w-full py-4.5 bg-orange-600 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 active:scale-95 transition-all outline-none disabled:opacity-60">
-                        {saving ? 'Saving…' : 'Add to Stock'}
-                    </button>
                 </form>
             </Modal>
 

@@ -21,38 +21,26 @@ export function AppLayout() {
     const location = useLocation();
     const title = PAGE_TITLES[location.pathname] || "Vinay's Kitchen";
     const isDashboard = location.pathname === '/';
-
-    // Mobile Keyboard Fix: Track visual viewport to prevent navbar lifting issues
-    const [vh, setVh] = useState(window.visualViewport?.height || window.innerHeight);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
     useEffect(() => {
-        if (!window.visualViewport) return;
-        const handleResize = () => {
-            const currentVh = window.visualViewport!.height;
-            setVh(currentVh);
-            
-            // If height drops significantly, keyboard is likely open
-            setIsKeyboardVisible(currentVh < window.innerHeight * 0.85);
+        const vv = window.visualViewport;
+        if (!vv) return;
 
-            // Ensure no ghost scrolling on keyboard dismissal
-            if (currentVh >= window.innerHeight) {
-                window.scrollTo(0, 0);
-            }
+        const handleResize = () => {
+            // Keyboard is open when visual viewport is significantly shorter than layout viewport.
+            // Threshold of 0.85 accounts for browser chrome changes.
+            setIsKeyboardVisible(vv.height / window.innerHeight < 0.85);
         };
-        window.visualViewport.addEventListener('resize', handleResize);
-        window.visualViewport.addEventListener('scroll', handleResize);
-        return () => {
-            window.visualViewport?.removeEventListener('resize', handleResize);
-            window.visualViewport?.removeEventListener('scroll', handleResize);
-        };
+
+        vv.addEventListener('resize', handleResize);
+        return () => vv.removeEventListener('resize', handleResize);
     }, []);
 
     return (
-        <div 
-            style={{ height: vh }}
-            className="fixed inset-0 bg-slate-50 flex flex-col max-w-md mx-auto shadow-xl overflow-hidden"
-        >
+        // fixed inset-0: always fills the full layout viewport — never creates a gap below.
+        // Do NOT add height/style overrides; that's what caused the whitespace under the navbar.
+        <div className="fixed inset-0 bg-slate-50 flex flex-col max-w-md mx-auto shadow-xl overflow-hidden">
             <TopBar title={title} showLogo={isDashboard} variant="light" />
             <main className="flex-1 min-h-0 overflow-hidden relative">
                 <div className={cn('h-full overflow-y-auto overscroll-y-contain', !isDashboard && 'p-4')}>

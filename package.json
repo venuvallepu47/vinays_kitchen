@@ -33,6 +33,9 @@
     "vite-plugin-pwa": "^0.21.1",
     "zustand": "^5.0.12"
   },
+  "overrides": {
+    "serialize-javascript": ">=7.0.5"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "eslint": "^9.39.4",

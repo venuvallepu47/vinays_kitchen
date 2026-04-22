@@ -247,20 +247,30 @@ export function VendorProfile() {
         
         setSaving(true);
         try {
-            // Check for manual materials (non-numeric IDs)
+            // Resolve material IDs — create new materials for manual name entries
+            const newlyCreated: string[] = [];
             const items = await Promise.all(valid.map(async (it) => {
-                // If it's a number (string-wrapped or actual number), it's existing
-                if (!isNaN(Number(it.material_id))) {
+                if (it.material_id && !isNaN(Number(it.material_id))) {
                     return { ...it, material_id: Number(it.material_id) };
                 }
-                
-                // Otherwise it's a manual name — create it first
-                const newMatRes = await api.post('/materials', {
-                    name: it.material_id,
-                    unit: 'units', // default for manual entry
-                });
-                return { ...it, material_id: newMatRes.data.id };
+                const matName = String(it.material_id).trim();
+                try {
+                    const res = await api.post('/materials', { name: matName, unit: 'units' });
+                    newlyCreated.push(matName);
+                    return { ...it, material_id: res.data.id };
+                } catch {
+                    // Material might already exist — fetch it by name
+                    const allMats = await api.get('/materials');
+                    const existing = (allMats.data as any[]).find(
+                        (m: any) => m.name.toLowerCase() === matName.toLowerCase()
+                    );
+                    if (existing) return { ...it, material_id: existing.id };
+                    throw new Error(`Could not create or find material: ${matName}`);
+                }
             }));
+            if (newlyCreated.length > 0) {
+                toast(`New material${newlyCreated.length > 1 ? 's' : ''} added: ${newlyCreated.join(', ')}`);
+            }
 
             const payload = {
                 bill_date: billDate,

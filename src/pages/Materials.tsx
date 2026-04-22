@@ -250,38 +250,55 @@ export function Materials() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{filtered.length} Types in Stock</p>
                     </div>
                     {filtered.map(mat => {
-                        const stock    = parseFloat(mat.current_stock || 0);
-                        const minStock = parseFloat(mat.min_stock || 0);
-                        const matCf    = parseFloat(mat.conversion_factor || 0);
+                        const stock          = parseFloat(mat.current_stock || 0);
+                        const minStock       = parseFloat(mat.min_stock || 0);
+                        const matCf          = parseFloat(mat.conversion_factor || 0);
                         const matIsContainer = isContainerUnit(mat.unit) && matCf > 0;
-                        // min_stock is in primary unit (cartons/bags); convert to base units for comparison
-                        const minStockBase = matIsContainer ? minStock * matCf : minStock;
-                        const isLow    = stock <= minStockBase;
+                        const minStockBase   = matIsContainer ? minStock * matCf : minStock;
+                        const isLow          = stock <= minStockBase;
+                        const baseUnit       = mat.base_unit || mat.unit;
                         return (
                             <div key={mat.id} onClick={() => navigate(`/materials/${mat.id}`)}
-                                className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 flex items-center gap-4 cursor-pointer active:bg-slate-50 transition-all active:scale-[0.98] group">
-                                <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-colors', isLow ? 'bg-danger-50 border-danger-100' : 'bg-orange-50 border-orange-100/50')}>
-                                    {isLow ? <AlertTriangle size={20} className="text-danger-500" /> : <Package size={20} className="text-orange-600" />}
+                                className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-3.5 flex items-center gap-3 cursor-pointer active:bg-slate-50 transition-all active:scale-[0.98]">
+                                {/* Icon */}
+                                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border', isLow ? 'bg-danger-50 border-danger-100' : 'bg-orange-50 border-orange-100/50')}>
+                                    {isLow ? <AlertTriangle size={17} className="text-danger-500" /> : <Package size={17} className="text-orange-600" />}
                                 </div>
+
+                                {/* Name + threshold */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-slate-900 truncate mb-1">{mat.name}</p>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Threshold: {minStock} {matIsContainer ? mat.unit : (mat.base_unit || mat.unit)}</p>
-                                        {isContainerUnit(mat.unit) && <div className="w-1 h-1 rounded-full bg-slate-200" />}
-                                        {isContainerUnit(mat.unit) && mat.conversion_factor && (
-                                            <p className="text-[10px] font-bold text-primary-500 italic">1 {mat.unit.slice(0, -1)} = {mat.conversion_factor} {mat.base_unit}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate leading-snug">{mat.name}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight whitespace-nowrap">
+                                            Min {minStock} {matIsContainer ? mat.unit : baseUnit}
+                                        </p>
+                                        {isLow && (
+                                            <span className="text-[8px] font-black bg-danger-600 text-white px-1.5 py-0.5 rounded-full uppercase tracking-tight whitespace-nowrap">
+                                                Refill
+                                            </span>
                                         )}
                                     </div>
                                 </div>
-                                <div className="text-right shrink-0">
-                                    <div className="flex flex-col items-end gap-1">
-                                        <p className={cn('text-sm font-black leading-tight', isLow ? 'text-danger-600' : 'text-slate-900')}>
-                                            {formatStock(mat)}
+
+                                {/* Stock — 2-line for containers, 1-line otherwise */}
+                                <div className="text-right shrink-0 min-w-[60px]">
+                                    {matIsContainer ? (
+                                        <>
+                                            <p className={cn('text-sm font-black leading-tight', isLow ? 'text-danger-600' : 'text-slate-800')}>
+                                                {Math.round(stock)}<span className="text-[9px] font-bold opacity-60 ml-0.5">{baseUnit}</span>
+                                            </p>
+                                            <p className="text-[10px] font-bold text-slate-400 mt-0.5 leading-tight">
+                                                ≈{(stock / matCf).toFixed(1)} {mat.unit.toLowerCase()}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className={cn('text-sm font-black leading-tight', isLow ? 'text-danger-600' : 'text-slate-800')}>
+                                            {stock % 1 === 0 ? stock.toFixed(0) : stock.toFixed(2)}<span className="text-[9px] font-bold opacity-60 ml-0.5">{mat.unit}</span>
                                         </p>
-                                        {isLow && <span className="text-[9px] font-black bg-danger-600 text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">Refill Required</span>}
-                                    </div>
+                                    )}
                                 </div>
-                                <ChevronRight size={16} className="text-slate-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+
+                                <ChevronRight size={14} className="text-slate-300 shrink-0" />
                             </div>
                         );
                     })}

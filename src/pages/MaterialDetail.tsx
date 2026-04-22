@@ -51,13 +51,6 @@ export function MaterialDetail() {
 
     const [purchaseForm, setPurchaseForm] = useState({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
     const [usageForm, setUsageForm] = useState({ quantity_used: '', usage_date: today(), notes: '' });
-    // Usage Bag/Carton conversion state
-    const [usageBagCount, setUsageBagCount] = useState('');
-    const [usageBagKgEach, setUsageBagKgEach] = useState('');
-    const [usageCartonCount, setUsageCartonCount] = useState('');
-    const [usageCartonUnitsEach, setUsageCartonUnitsEach] = useState('');
-    // 'container' = log in bags/cartons, 'base' = log directly in kg/units
-    const [usageMode, setUsageMode] = useState<'container' | 'base'>('container');
     const [editForm, setEditForm] = useState({ name: '', unit: 'kg', min_stock: '0', conversion_factor: '', base_unit: '' });
 
     const [showEditPurchase, setShowEditPurchase] = useState(false);
@@ -104,13 +97,6 @@ export function MaterialDetail() {
                 conversion_factor: mat?.conversion_factor ? String(mat.conversion_factor) : '',
                 base_unit: mat?.base_unit || '',
             });
-            // Auto-seed conversion multipliers from saved material data
-            if (mat?.conversion_factor) {
-                const cf = String(mat.conversion_factor);
-                const u  = (mat.unit || '').toLowerCase();
-                if (u === 'bags' || u === 'bag') setUsageBagKgEach(cf);
-                if (u === 'cartons' || u === 'carton') setUsageCartonUnitsEach(cf);
-            }
             setVendors(vends.data);
             setPurchases(purcs.data);
             setUsage(usgs.data);
@@ -210,26 +196,10 @@ export function MaterialDetail() {
     const handleUsage = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            let finalQty = usageForm.quantity_used;
-            const unit     = material?.unit?.toLowerCase() || '';
-            const isBag    = unit === 'bags' || unit === 'bag';
-            const isCarton = unit === 'cartons' || unit === 'carton';
-
-            if (usageMode === 'container') {
-                // Convert container count × factor → base units
-                if (isBag && usageBagCount && usageBagKgEach) {
-                    finalQty = String(parseFloat(usageBagCount) * parseFloat(usageBagKgEach));
-                } else if (isCarton && usageCartonCount && usageCartonUnitsEach) {
-                    finalQty = String(parseFloat(usageCartonCount) * parseFloat(usageCartonUnitsEach));
-                }
-            }
-            // In 'base' mode, usageForm.quantity_used is already in kg/units — use directly
-            await api.post('/usage', { ...usageForm, quantity_used: finalQty, material_id: id });
+            await api.post('/usage', { ...usageForm, material_id: id });
             toast('Usage logged');
             setShowUsage(false);
             setUsageForm({ quantity_used: '', usage_date: today(), notes: '' });
-            setUsageBagCount(''); setUsageBagKgEach(''); setUsageCartonCount(''); setUsageCartonUnitsEach('');
-            setUsageMode('container');
             fetchAll();
         } catch { toast('Failed to log usage', 'error'); }
     };
@@ -499,18 +469,30 @@ export function MaterialDetail() {
                                     </div>
                                 );
 
-                                return filtered.map((u: any) => (
-                                    <div key={u.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 flex items-center gap-3 active:bg-slate-50 transition-colors">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-slate-900 mb-0.5">{u.quantity_used} {stockBaseUnit} Consumption</p>
-                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{formatDate(u.usage_date)} {u.notes && `· ${u.notes}`}</p>
+                                return filtered.map((u: any) => {
+                                    const qty = parseFloat(u.quantity_used);
+                                    const containerEq = isBagOrCarton && cf > 0
+                                        ? `≈ ${(qty / cf).toFixed(1)} ${material.unit.toLowerCase()}`
+                                        : null;
+                                    return (
+                                        <div key={u.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 flex items-center gap-3 active:bg-slate-50 transition-colors">
+                                            <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                                <TrendingDown size={16} className="text-orange-500" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-black text-slate-900">
+                                                    Used <span className="text-orange-600">{Number.isInteger(qty) ? qty : qty.toFixed(2)} {stockBaseUnit}</span>
+                                                    {containerEq && <span className="text-slate-400 font-bold text-xs ml-1">({containerEq})</span>}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 font-bold mt-0.5">{formatDate(u.usage_date)}{u.notes && ` · ${u.notes}`}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <button onClick={() => openEditUsage(u)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"><Pencil size={14} /></button>
+                                                <button onClick={() => setDeleteUsageId(u.id)} className="p-2 rounded-lg hover:bg-danger-50 text-slate-400 transition-colors"><Trash2 size={14} /></button>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <button onClick={() => openEditUsage(u)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"><Pencil size={14} /></button>
-                                            <button onClick={() => setDeleteUsageId(u.id)} className="p-2 rounded-lg hover:bg-danger-50 text-slate-400 transition-colors"><Trash2 size={14} /></button>
-                                        </div>
-                                    </div>
-                                ));
+                                    );
+                                });
                             })()}
                         </div>
                     )}
@@ -670,78 +652,94 @@ export function MaterialDetail() {
             </Modal>
 
             {/* Log Usage Modal */}
-            <Modal isOpen={showUsage} onClose={() => { setShowUsage(false); setUsageMode('container'); }} title="Material Consumption Log">
+            <Modal isOpen={showUsage} onClose={() => { setShowUsage(false); setUsageForm({ quantity_used: '', usage_date: today(), notes: '' }); }} title="Log Consumption">
                 <form onSubmit={handleUsage} className="space-y-5 pt-3">
                     <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-5">
-                        {/* Mode toggle for Bags/Cartons */}
-                        {(material.unit?.toLowerCase().includes('bag') || material.unit?.toLowerCase().includes('carton')) && (
-                            <div className="flex gap-2 bg-slate-200/50 p-1.5 rounded-[20px]">
-                                <button type="button" onClick={() => setUsageMode('container')}
-                                    className={cn('flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all', usageMode === 'container' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400')}>
-                                    📦 By {material.unit}
-                                </button>
-                                <button type="button" onClick={() => setUsageMode('base')}
-                                    className={cn('flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all', usageMode === 'base' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400')}>
-                                    ⚖️ By Weight/Units
-                                </button>
+                        {/* Natural prompt */}
+                        <div className="text-center pb-1">
+                            <p className="text-base font-black text-slate-700">
+                                How many <span className="text-orange-600">{stockBaseUnit}</span> of{' '}
+                                <span className="text-slate-900">{material.name}</span> used?
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-0.5 font-bold">
+                                {isBagOrCarton
+                                    ? `Enter in ${stockBaseUnit} — we'll calculate ${material.unit.toLowerCase()} for you`
+                                    : `Enter the quantity consumed`}
+                            </p>
+                        </div>
+
+                        {/* Big single input */}
+                        <div className="relative">
+                            <input
+                                required
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                inputMode="decimal"
+                                placeholder={isBagOrCarton
+                                    ? `e.g. ${cf > 0 ? Math.round(cf * 0.5) : 10}`
+                                    : `e.g. ${material.unit?.toLowerCase() === 'kg' ? '2.5' : '5'}`}
+                                value={usageForm.quantity_used}
+                                onChange={e => setUsageForm(f => ({ ...f, quantity_used: e.target.value }))}
+                                className="w-full h-16 px-5 pr-24 bg-white border-2 border-slate-200 rounded-2xl text-2xl font-black text-slate-900 focus:border-orange-400 focus:shadow-lg focus:shadow-orange-500/10 transition-all outline-none shadow-sm"
+                            />
+                            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-base font-black text-slate-400 pointer-events-none">
+                                {stockBaseUnit}
+                            </span>
+                        </div>
+
+                        {/* Live container preview */}
+                        {isBagOrCarton && cf > 0 && usageForm.quantity_used && parseFloat(usageForm.quantity_used) > 0 && (
+                            <div className="bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3 flex items-center justify-between">
+                                <span className="text-xs font-black text-orange-700 uppercase tracking-widest">Container equiv.</span>
+                                <span className="text-sm font-black text-orange-900">
+                                    ≈ {(parseFloat(usageForm.quantity_used) / cf).toFixed(2)} {material.unit.toLowerCase()}
+                                </span>
                             </div>
                         )}
 
-                        {usageMode === 'container' && (material.unit?.toLowerCase() === 'bags' || material.unit?.toLowerCase() === 'bag') ? (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelCls}>Bags Used</label>
-                                    <input required type="number" min="0.01" step="0.01" placeholder="0" value={usageBagCount} onChange={e => setUsageBagCount(e.target.value)} className={inputCls} />
-                                </div>
-                                <div>
-                                    <label className={labelCls}>KG / Bag</label>
-                                    <input required type="number" min="0.01" step="0.01" value={usageBagKgEach} onChange={e => setUsageBagKgEach(e.target.value)} className={inputCls} />
-                                </div>
-                            </div>
-                        ) : usageMode === 'container' && (material.unit?.toLowerCase() === 'cartons' || material.unit?.toLowerCase() === 'carton') ? (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelCls}>Cartons Used</label>
-                                    <input required type="number" min="0.01" step="0.01" placeholder="0" value={usageCartonCount} onChange={e => setUsageCartonCount(e.target.value)} className={inputCls} />
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Units / Carton</label>
-                                    <input required type="number" min="1" step="1" value={usageCartonUnitsEach} onChange={e => setUsageCartonUnitsEach(e.target.value)} className={inputCls} />
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <label className={labelCls}>Quantity Used ({stockBaseUnit})</label>
-                                <input required type="number" min="0.01" step="0.01" placeholder="0.00" value={usageForm.quantity_used} onChange={e => setUsageForm(f => ({ ...f, quantity_used: e.target.value }))} className={inputCls} />
-                            </div>
-                        )}
-
-                        <DateInput 
-                            label="Usage Date"
+                        <DateInput
+                            label="Date of Usage"
                             value={usageForm.usage_date}
                             onChange={e => setUsageForm(f => ({ ...f, usage_date: e.target.value }))}
                         />
 
                         <div>
-                            <label className={labelCls}>Additional Notes</label>
-                            <textarea placeholder="e.g. Daily prep usage" value={usageForm.notes} onChange={e => setUsageForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                                className="w-full px-5 py-3 bg-white border border-slate-200 rounded-3xl text-base font-bold text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 resize-none" />
+                            <label className={labelCls}>Notes (optional)</label>
+                            <textarea
+                                placeholder={`e.g. Morning prep, ${material.name.toLowerCase()} for batter`}
+                                value={usageForm.notes}
+                                onChange={e => setUsageForm(f => ({ ...f, notes: e.target.value }))}
+                                rows={2}
+                                className="w-full px-5 py-3 bg-white border border-slate-200 rounded-3xl text-base font-bold text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 resize-none"
+                            />
                         </div>
                     </div>
-                    
+
                     <button type="submit" className="w-full py-4.5 bg-orange-600 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 active:scale-95 transition-all">
-                        Log Consumption
+                        Confirm Consumption
                     </button>
                 </form>
             </Modal>
 
             {/* Edit Usage Modal */}
-            <Modal isOpen={showEditUsage} onClose={() => setShowEditUsage(false)} title="Update Usage Entry">
+            <Modal isOpen={showEditUsage} onClose={() => setShowEditUsage(false)} title="Edit Consumption Entry">
                 <form onSubmit={handleEditUsage} className="space-y-5 pt-3">
                     <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-5">
                         <div>
-                            <label className={labelCls}>Quantity Consumed ({stockBaseUnit})</label>
-                            <input required type="number" min="0.01" step="0.01" value={editUsageForm.quantity_used} onChange={e => setEditUsageForm(f => ({ ...f, quantity_used: e.target.value }))} className={inputCls} />
+                            <label className={labelCls}>{stockBaseUnit} Consumed</label>
+                            <div className="relative">
+                                <input required type="number" min="0.01" step="0.01" inputMode="decimal"
+                                    value={editUsageForm.quantity_used}
+                                    onChange={e => setEditUsageForm(f => ({ ...f, quantity_used: e.target.value }))}
+                                    className="w-full h-14 px-5 pr-20 bg-white border-2 border-slate-200 rounded-2xl text-xl font-black text-slate-900 focus:border-orange-400 transition-all outline-none shadow-sm" />
+                                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400 pointer-events-none">{stockBaseUnit}</span>
+                            </div>
+                            {isBagOrCarton && cf > 0 && editUsageForm.quantity_used && parseFloat(editUsageForm.quantity_used) > 0 && (
+                                <p className="text-xs font-black text-orange-600 mt-2 px-1">
+                                    ≈ {(parseFloat(editUsageForm.quantity_used) / cf).toFixed(2)} {material.unit.toLowerCase()}
+                                </p>
+                            )}
                         </div>
                         <DateInput 
                             label="Usage Date"

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: vinays-kitchen-api
+    runtime: node
+    buildCommand: cd server && npm install && npm run build
+    startCommand: node server/dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production

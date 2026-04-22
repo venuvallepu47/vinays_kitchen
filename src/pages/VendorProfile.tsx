@@ -17,7 +17,15 @@ import api from '../utils/api';
 
 const TODAY = today();
 
-type BillItem = { material_id: string; quantity: string; price_per_unit: string };
+const UNIT_OPTIONS = ['kg', 'g', 'ltr', 'ml', 'pieces', 'packets', 'bundles', 'dozens', 'Bags', 'Cartons'];
+
+type BillItem = {
+    material_id: string;
+    quantity: string;
+    price_per_unit: string;
+    new_unit?: string;
+    new_conversion_factor?: string;
+};
 type Bill = {
     id: number; bill_date: string; total_amount: string; paid_amount: string;
     payment_mode: string; notes: string;
@@ -254,12 +262,18 @@ export function VendorProfile() {
                     return { ...it, material_id: Number(it.material_id) };
                 }
                 const matName = String(it.material_id).trim();
+                const unitLower = (it.new_unit || 'kg').toLowerCase();
+                const baseUnit = unitLower.includes('bag') ? 'kg' : unitLower.includes('carton') ? 'units' : null;
                 try {
-                    const res = await api.post('/materials', { name: matName, unit: 'units' });
+                    const res = await api.post('/materials', {
+                        name: matName,
+                        unit: it.new_unit || 'kg',
+                        conversion_factor: it.new_conversion_factor ? parseFloat(it.new_conversion_factor) : null,
+                        base_unit: baseUnit,
+                    });
                     newlyCreated.push(matName);
                     return { ...it, material_id: res.data.id };
                 } catch {
-                    // Material might already exist — fetch it by name
                     const allMats = await api.get('/materials');
                     const existing = (allMats.data as any[]).find(
                         (m: any) => m.name.toLowerCase() === matName.toLowerCase()
@@ -679,12 +693,22 @@ export function VendorProfile() {
                                 {billItems.map((item, idx) => (
                                     <div key={idx} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                                         <div className="flex gap-2">
-                                            <Combobox 
+                                            <Combobox
                                                 className="flex-1"
                                                 options={materials}
                                                 value={item.material_id}
                                                 placeholder="Choose Material..."
-                                                onChange={(val) => updateItem(idx, 'material_id', String(val))}
+                                                onChange={(val, isManual) => {
+                                                    if (isManual) {
+                                                        setBillItems(prev => prev.map((it, i) => i === idx
+                                                            ? { ...it, material_id: String(val), new_unit: 'kg', new_conversion_factor: '' }
+                                                            : it));
+                                                    } else {
+                                                        setBillItems(prev => prev.map((it, i) => i === idx
+                                                            ? { material_id: String(val), quantity: it.quantity, price_per_unit: it.price_per_unit }
+                                                            : it));
+                                                    }
+                                                }}
                                             />
                                             {billItems.length > 1 && (
                                                 <button type="button" onClick={() => removeItem(idx)}
@@ -693,6 +717,52 @@ export function VendorProfile() {
                                                 </button>
                                             )}
                                         </div>
+                                        {/* New material unit setup — shown only when name is typed manually */}
+                                        {item.material_id && isNaN(Number(item.material_id)) && (
+                                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+                                                        <Plus size={11} strokeWidth={3} className="text-white" />
+                                                    </div>
+                                                    <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
+                                                        New Material — Set How It's Measured
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1.5 block px-1">Unit of Measurement *</label>
+                                                    <select
+                                                        required
+                                                        value={item.new_unit || 'kg'}
+                                                        onChange={e => setBillItems(prev => prev.map((it, i) => i === idx
+                                                            ? { ...it, new_unit: e.target.value, new_conversion_factor: '' }
+                                                            : it))}
+                                                        className="w-full h-12 px-4 bg-white border border-amber-300 rounded-2xl text-base font-black text-slate-900 focus:border-amber-500 outline-none shadow-sm"
+                                                    >
+                                                        {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                                                    </select>
+                                                </div>
+                                                {(item.new_unit?.toLowerCase().includes('bag') || item.new_unit?.toLowerCase().includes('carton')) && (
+                                                    <div>
+                                                        <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1.5 block px-1">
+                                                            {item.new_unit?.toLowerCase().includes('bag') ? 'KG per Bag *' : 'Units per Carton *'}
+                                                        </label>
+                                                        <input
+                                                            required
+                                                            type="number"
+                                                            min="0.01"
+                                                            step="0.01"
+                                                            placeholder={item.new_unit?.toLowerCase().includes('bag') ? 'e.g. 25' : 'e.g. 30'}
+                                                            value={item.new_conversion_factor || ''}
+                                                            onChange={e => setBillItems(prev => prev.map((it, i) => i === idx
+                                                                ? { ...it, new_conversion_factor: e.target.value }
+                                                                : it))}
+                                                            className="w-full h-12 px-4 bg-white border border-amber-300 rounded-2xl text-base font-black text-slate-900 focus:border-amber-500 outline-none shadow-sm"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
                                         <div className="space-y-3 pt-1">
                                             <div className="flex-1">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block px-1">Quantity</label>

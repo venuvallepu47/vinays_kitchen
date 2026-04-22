@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Package, TrendingDown, Trash2, Pencil, Banknote, CreditCard, Building2, Search, Filter, ChevronDown } from 'lucide-react';
 import { DateInput } from '../components/ui/DateInput';
 import { Modal } from '../components/ui/Modal';
@@ -37,6 +37,7 @@ function PaymentModeChips({ value, onChange }: { value: string; onChange: (v: st
 
 export function MaterialDetail() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const { toast } = useToast();
     const [material, setMaterial] = useState<any>(null);
     const [saving, setSaving] = useState(false);
@@ -72,6 +73,7 @@ export function MaterialDetail() {
 
     const [deletePurchaseId, setDeletePurchaseId] = useState<number | null>(null);
     const [deleteUsageId, setDeleteUsageId] = useState<number | null>(null);
+    const [showDeleteMaterial, setShowDeleteMaterial] = useState(false);
 
     // Filter state
     const [searchQuery, setSearchQuery] = useState('');
@@ -235,6 +237,17 @@ export function MaterialDetail() {
         } catch { toast('Failed to update', 'error'); }
     };
 
+    const confirmDeleteMaterial = async () => {
+        try {
+            await api.delete(`/materials/${id}`);
+            toast('Material deleted');
+            navigate('/materials');
+        } catch (err: any) {
+            const msg = err?.response?.data?.error || 'Failed to delete material';
+            toast(msg, 'error');
+        }
+    };
+
     const confirmDeletePurchase = async () => {
         if (!deletePurchaseId) return;
         try { await api.delete(`/purchases/${deletePurchaseId}`); toast('Deleted'); fetchAll(); }
@@ -269,7 +282,10 @@ export function MaterialDetail() {
     return (
         <div className="min-h-dvh bg-slate-50 flex flex-col max-w-md mx-auto shadow-xl overflow-hidden pb-24">
             <TopBar title={material.name} showBack rightAction={
-                <button onClick={() => setShowEdit(true)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"><Pencil size={18} /></button>
+                <div className="flex items-center gap-1">
+                    <button onClick={() => setShowEdit(true)} className="p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90"><Pencil size={18} /></button>
+                    <button onClick={() => setShowDeleteMaterial(true)} className="p-2.5 rounded-xl hover:bg-red-50 text-red-400 transition-all active:scale-90"><Trash2 size={18} /></button>
+                </div>
             } />
             <main className="flex-1 min-h-0 overflow-y-auto">
                 <div className="p-4 space-y-4 pb-safe">
@@ -801,6 +817,14 @@ export function MaterialDetail() {
                 </form>
             </Modal>
 
+            <ConfirmModal
+                isOpen={showDeleteMaterial}
+                onClose={() => setShowDeleteMaterial(false)}
+                onConfirm={confirmDeleteMaterial}
+                title="Delete Material"
+                message={`Delete "${material.name}"? Only allowed if there are no purchases or usage records. This cannot be undone.`}
+                confirmText="Yes, Delete"
+            />
             <ConfirmModal
                 isOpen={deletePurchaseId !== null}
                 onClose={() => setDeletePurchaseId(null)}

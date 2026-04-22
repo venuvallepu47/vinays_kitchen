@@ -60,10 +60,17 @@ export const updateMaterial = async (req: Request, res: Response) => {
     }
 };
 
-// DELETE material
+// DELETE material — only allowed when no records exist
 export const deleteMaterial = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const [pRes, uRes] = await Promise.all([
+            pool.query('SELECT 1 FROM purchases WHERE material_id=$1 LIMIT 1', [id]),
+            pool.query('SELECT 1 FROM material_usage WHERE material_id=$1 LIMIT 1', [id]),
+        ]);
+        if (pRes.rowCount! > 0 || uRes.rowCount! > 0) {
+            return res.status(409).json({ error: 'Cannot delete: this material has purchase or usage records.' });
+        }
         await pool.query('DELETE FROM materials WHERE id=$1', [id]);
         res.json({ message: 'Material deleted' });
     } catch (err) {

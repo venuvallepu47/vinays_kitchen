@@ -23,7 +23,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             pool.query(`
                 WITH stock AS (
                     SELECT m.min_stock,
-                        COALESCE(p.total_purchased, 0) - COALESCE(u.total_used, 0) AS current_stock
+                        m.conversion_factor::numeric,
+                        COALESCE(p.total_purchased, 0) * COALESCE(m.conversion_factor::numeric, 1)
+                            - COALESCE(u.total_used, 0) AS current_stock
                     FROM materials m
                     LEFT JOIN (
                         SELECT material_id, SUM(quantity) AS total_purchased FROM purchases GROUP BY material_id
@@ -32,7 +34,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
                         SELECT material_id, SUM(quantity_used) AS total_used FROM material_usage GROUP BY material_id
                     ) u ON u.material_id = m.id
                 )
-                SELECT COUNT(*) FROM stock WHERE current_stock <= min_stock
+                SELECT COUNT(*) FROM stock
+                WHERE current_stock <= min_stock * COALESCE(conversion_factor, 1)
             `),
             pool.query(`
                 SELECT COUNT(*) 

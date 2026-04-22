@@ -50,11 +50,6 @@ export function MaterialDetail() {
     const [showEdit, setShowEdit] = useState(false);
 
     const [purchaseForm, setPurchaseForm] = useState({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
-    // Bag/Carton conversion state: user enters count + multiplier, we compute quantity
-    const [bagCount, setBagCount] = useState('');
-    const [bagKgEach, setBagKgEach] = useState('');
-    const [cartonCount, setCartonCount] = useState('');
-    const [cartonUnitsEach, setCartonUnitsEach] = useState('');
     const [usageForm, setUsageForm] = useState({ quantity_used: '', usage_date: today(), notes: '' });
     // Usage Bag/Carton conversion state
     const [usageBagCount, setUsageBagCount] = useState('');
@@ -113,8 +108,8 @@ export function MaterialDetail() {
             if (mat?.conversion_factor) {
                 const cf = String(mat.conversion_factor);
                 const u  = (mat.unit || '').toLowerCase();
-                if (u === 'bags' || u === 'bag') { setBagKgEach(cf); setUsageBagKgEach(cf); }
-                if (u === 'cartons' || u === 'carton') { setCartonUnitsEach(cf); setUsageCartonUnitsEach(cf); }
+                if (u === 'bags' || u === 'bag') setUsageBagKgEach(cf);
+                if (u === 'cartons' || u === 'carton') setUsageCartonUnitsEach(cf);
             }
             setVendors(vends.data);
             setPurchases(purcs.data);
@@ -129,27 +124,17 @@ export function MaterialDetail() {
         e.preventDefault();
         setSaving(true);
         try {
-            let finalQuantity = purchaseForm.quantity;
-            const unit = material?.unit?.toLowerCase() || '';
-            const isBag = unit === 'bags' || unit === 'bag';
-            const isCarton = unit === 'cartons' || unit === 'carton';
-
-            if (isBag && bagCount && bagKgEach) {
-                finalQuantity = String(parseFloat(bagCount) * parseFloat(bagKgEach));
-            } else if (isCarton && cartonCount && cartonUnitsEach) {
-                finalQuantity = String(parseFloat(cartonCount) * parseFloat(cartonUnitsEach));
-            }
-
+            // For bag/carton materials, quantity is stored in primary unit (bags/cartons).
+            // The backend applies conversion_factor when computing stock.
             const res = await api.post(`/materials/${id}/purchase`, {
                 ...purchaseForm,
-                quantity: finalQuantity,
+                quantity: purchaseForm.quantity,
             });
 
             const merged = res.data?.merged;
             toast(merged ? 'Added to existing bill (merged)' : 'Purchase logged & bill created');
             setShowPurchase(false);
             setPurchaseForm({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
-            setBagCount(''); setBagKgEach(''); setCartonCount(''); setCartonUnitsEach('');
             fetchAll();
         } catch {
             toast('Failed to log purchase', 'error');
@@ -296,7 +281,17 @@ export function MaterialDetail() {
     );
 
     const stock = parseFloat(material.current_stock || 0);
-    const isLow = stock <= parseFloat(material.min_stock || 0);
+    const cf    = parseFloat(material.conversion_factor || 0);
+    const isBagOrCarton = cf > 0 && (
+        material.unit?.toLowerCase().includes('bag') ||
+        material.unit?.toLowerCase().includes('carton')
+    );
+    // min_stock is in primary unit (cartons/bags); convert to base units for comparison
+    const minStockBase = parseFloat(material.min_stock || 0) * (isBagOrCarton ? cf : 1);
+    const isLow = stock <= minStockBase;
+    // Display helpers
+    const stockBaseUnit    = isBagOrCarton ? (material.base_unit || 'units') : material.unit;
+    const stockInPrimary   = isBagOrCarton && cf > 0 ? (stock / cf) : null;
 
     const inputCls = "w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm";
     const labelCls = "text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block px-1";
@@ -312,13 +307,20 @@ export function MaterialDetail() {
                     <div className={cn('rounded-[32px] p-6 border shadow-sm relative overflow-hidden', isLow ? 'bg-white border-danger-200' : 'bg-white border-success-200')}>
                         <div className={cn('absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-10', isLow ? 'bg-danger-500' : 'bg-success-500')} />
                         <p className={cn('text-[10px] font-black uppercase tracking-widest mb-1 relative z-10', isLow ? 'text-danger-600' : 'text-success-600')}>Current Inventory Level</p>
-                        <p className={cn('text-4xl font-black relative z-10', isLow ? 'text-danger-900' : 'text-success-900')}>
-                            {stock.toFixed(2)} <span className="text-xl font-bold opacity-60 ml-0.5">{material.unit}</span>
+                        <p className={cn('text-4xl font-black relative z-10 leading-tight', isLow ? 'text-danger-900' : 'text-success-900')}>
+                            {stock.toFixed(2)} <span className="text-xl font-bold opacity-60 ml-0.5">{stockBaseUnit}</span>
                         </p>
+                        {stockInPrimary !== null && (
+                            <p className="text-sm font-bold opacity-50 mt-1 relative z-10">
+                                ≈ {stockInPrimary.toFixed(1)} {material.unit}
+                            </p>
+                        )}
                         {isLow && (
                             <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-danger-50 text-danger-700 rounded-full border border-danger-100 relative z-10">
                                 <span className="w-1.5 h-1.5 rounded-full bg-danger-600 animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-tighter">Below Threshold ({material.min_stock} {material.unit})</span>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">
+                                    Below Threshold ({material.min_stock} {material.unit})
+                                </span>
                             </div>
                         )}
                     </div>
@@ -500,7 +502,7 @@ export function MaterialDetail() {
                                 return filtered.map((u: any) => (
                                     <div key={u.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 flex items-center gap-3 active:bg-slate-50 transition-colors">
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-slate-900 mb-0.5">{u.quantity_used} {material.unit} Consumption</p>
+                                            <p className="text-sm font-black text-slate-900 mb-0.5">{u.quantity_used} {stockBaseUnit} Consumption</p>
                                             <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{formatDate(u.usage_date)} {u.notes && `· ${u.notes}`}</p>
                                         </div>
                                         <div className="flex items-center gap-1">
@@ -519,7 +521,6 @@ export function MaterialDetail() {
             <Modal isOpen={showPurchase} onClose={() => {
                 setShowPurchase(false);
                 setPurchaseForm({ vendor_id: '', quantity: '', price_per_unit: '', purchase_date: today(), notes: '', paid_amount: '', payment_mode: 'cash' });
-                setBagCount(''); setBagKgEach(''); setCartonCount(''); setCartonUnitsEach('');
             }} title="Log Material Purchase">
                 <form onSubmit={handlePurchase} className="space-y-5 pt-3">
                     <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-5">
@@ -531,65 +532,31 @@ export function MaterialDetail() {
                             </select>
                         </div>
                         
-                        {(material.unit?.toLowerCase() === 'bags' || material.unit?.toLowerCase() === 'bag') ? (
-                            <div className="bg-orange-600/5 rounded-3xl p-5 border border-orange-500/10 space-y-4">
-                                <p className="text-[10px] font-black text-orange-700 uppercase tracking-widest text-center">Bag Conversion Multiplier</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className={labelCls}>Bags Count</label>
-                                        <input required type="number" min="1" step="1" placeholder="0" value={bagCount} onChange={e => setBagCount(e.target.value)} className={inputCls} />
-                                    </div>
-                                    <div>
-                                        <label className={labelCls}>KGs / Bag</label>
-                                        <input required type="number" min="0.01" step="0.01" value={bagKgEach} onChange={e => setBagKgEach(e.target.value)} className={inputCls} />
-                                    </div>
-                                </div>
-                                {bagCount && bagKgEach && (
-                                    <div className="bg-white/80 py-2.5 rounded-xl border border-orange-200/50 text-center shadow-sm animate-in zoom-in-95 duration-200">
-                                        <p className="text-xs font-black text-orange-600">Adding {(parseFloat(bagCount) * parseFloat(bagKgEach)).toFixed(2)} kg to stock</p>
-                                    </div>
-                                )}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className={labelCls}>Quantity ({material.unit})</label>
+                                <input required type="number" min="0.01" step="0.01" placeholder="0.00"
+                                    value={purchaseForm.quantity}
+                                    onChange={e => setPurchaseForm(f => ({ ...f, quantity: e.target.value }))}
+                                    className={inputCls} />
                             </div>
-                        ) : (material.unit?.toLowerCase() === 'cartons' || material.unit?.toLowerCase() === 'carton') ? (
-                            <div className="bg-indigo-600/5 rounded-3xl p-5 border border-indigo-500/10 space-y-4">
-                                <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest text-center">Carton Pack Multiplier</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className={labelCls}>Carton Count</label>
-                                        <input required type="number" min="1" step="1" placeholder="0" value={cartonCount} onChange={e => setCartonCount(e.target.value)} className={inputCls} />
-                                    </div>
-                                    <div>
-                                        <label className={labelCls}>Units / Carton</label>
-                                        <input required type="number" min="1" step="1" value={cartonUnitsEach} onChange={e => setCartonUnitsEach(e.target.value)} className={inputCls} />
-                                    </div>
-                                </div>
-                                {cartonCount && cartonUnitsEach && (
-                                    <div className="bg-white/80 py-2.5 rounded-xl border border-indigo-200/50 text-center shadow-sm animate-in zoom-in-95 duration-200">
-                                        <p className="text-xs font-black text-indigo-600">Adding {(parseFloat(cartonCount) * parseFloat(cartonUnitsEach)).toFixed(0)} units to stock</p>
-                                    </div>
-                                )}
+                            <div>
+                                <label className={labelCls}>Price / {material.unit}</label>
+                                <input required type="number" min="0" step="0.01" placeholder="₹0.00"
+                                    value={purchaseForm.price_per_unit}
+                                    onChange={e => setPurchaseForm(f => ({ ...f, price_per_unit: e.target.value }))}
+                                    className={inputCls} />
                             </div>
-                        ) : (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelCls}>Quantity ({material.unit})</label>
-                                    <input required type="number" min="0.01" step="0.01" placeholder="0.00" value={purchaseForm.quantity} onChange={e => setPurchaseForm(f => ({ ...f, quantity: e.target.value }))} className={inputCls} />
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Price / {material.unit}</label>
-                                    <input required type="number" min="0" step="0.01" placeholder="₹0.00" value={purchaseForm.price_per_unit} onChange={e => setPurchaseForm(f => ({ ...f, price_per_unit: e.target.value }))} className={inputCls} />
-                                </div>
+                        </div>
+                        {isBagOrCarton && cf > 0 && purchaseForm.quantity && (
+                            <div className="bg-indigo-50 py-2.5 px-4 rounded-2xl border border-indigo-100 text-center">
+                                <p className="text-xs font-black text-indigo-600">
+                                    = {(parseFloat(purchaseForm.quantity) * cf).toFixed(0)} {material.base_unit || 'units'} added to stock
+                                </p>
                             </div>
                         )}
 
                                     <div className="grid grid-cols-1 gap-5">
-                            {/* Price for bags/cartons */}
-                            {(material.unit?.toLowerCase().includes('bag') || material.unit?.toLowerCase().includes('carton')) && (
-                                <div>
-                                    <label className={labelCls}>Price per Standard {material.unit} (₹)</label>
-                                    <input required type="number" min="0" step="0.01" placeholder="0.00" value={purchaseForm.price_per_unit} onChange={e => setPurchaseForm(f => ({ ...f, price_per_unit: e.target.value }))} className={inputCls} />
-                                </div>
-                            )}
 
                             <DateInput
                                 label="Purchase Date"
@@ -618,10 +585,7 @@ export function MaterialDetail() {
                                         className="w-full h-12 pl-9 pr-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-900 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm" />
                                 </div>
                                 {(() => {
-                                    const qty = material.unit?.toLowerCase().includes('bag') ? parseFloat(bagCount||'0') * parseFloat(bagKgEach||'0')
-                                              : material.unit?.toLowerCase().includes('carton') ? parseFloat(cartonCount||'0') * parseFloat(cartonUnitsEach||'0')
-                                              : parseFloat(purchaseForm.quantity || '0');
-                                    const total = qty * parseFloat(purchaseForm.price_per_unit || '0');
+                                    const total = parseFloat(purchaseForm.quantity || '0') * parseFloat(purchaseForm.price_per_unit || '0');
                                     return total > 0 ? (
                                         <button type="button"
                                             onClick={() => setPurchaseForm(f => ({ ...f, paid_amount: total.toFixed(2) }))}
@@ -747,7 +711,7 @@ export function MaterialDetail() {
                             </div>
                         ) : (
                             <div>
-                                <label className={labelCls}>Quantity Used ({material.base_unit || material.unit})</label>
+                                <label className={labelCls}>Quantity Used ({stockBaseUnit})</label>
                                 <input required type="number" min="0.01" step="0.01" placeholder="0.00" value={usageForm.quantity_used} onChange={e => setUsageForm(f => ({ ...f, quantity_used: e.target.value }))} className={inputCls} />
                             </div>
                         )}
@@ -776,7 +740,7 @@ export function MaterialDetail() {
                 <form onSubmit={handleEditUsage} className="space-y-5 pt-3">
                     <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 space-y-5">
                         <div>
-                            <label className={labelCls}>Quantity Consumed ({material.unit})</label>
+                            <label className={labelCls}>Quantity Consumed ({stockBaseUnit})</label>
                             <input required type="number" min="0.01" step="0.01" value={editUsageForm.quantity_used} onChange={e => setEditUsageForm(f => ({ ...f, quantity_used: e.target.value }))} className={inputCls} />
                         </div>
                         <DateInput 

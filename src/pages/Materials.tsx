@@ -252,7 +252,11 @@ export function Materials() {
                     {filtered.map(mat => {
                         const stock    = parseFloat(mat.current_stock || 0);
                         const minStock = parseFloat(mat.min_stock || 0);
-                        const isLow    = stock <= minStock;
+                        const matCf    = parseFloat(mat.conversion_factor || 0);
+                        const matIsContainer = isContainerUnit(mat.unit) && matCf > 0;
+                        // min_stock is in primary unit (cartons/bags); convert to base units for comparison
+                        const minStockBase = matIsContainer ? minStock * matCf : minStock;
+                        const isLow    = stock <= minStockBase;
                         return (
                             <div key={mat.id} onClick={() => navigate(`/materials/${mat.id}`)}
                                 className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 flex items-center gap-4 cursor-pointer active:bg-slate-50 transition-all active:scale-[0.98] group">
@@ -262,7 +266,7 @@ export function Materials() {
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-slate-900 truncate mb-1">{mat.name}</p>
                                     <div className="flex items-center gap-2">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Threshold: {minStock} {mat.base_unit || mat.unit}</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Threshold: {minStock} {matIsContainer ? mat.unit : (mat.base_unit || mat.unit)}</p>
                                         {isContainerUnit(mat.unit) && <div className="w-1 h-1 rounded-full bg-slate-200" />}
                                         {isContainerUnit(mat.unit) && mat.conversion_factor && (
                                             <p className="text-[10px] font-bold text-primary-500 italic">1 {mat.unit.slice(0, -1)} = {mat.conversion_factor} {mat.base_unit}</p>

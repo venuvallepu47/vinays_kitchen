@@ -9,7 +9,9 @@ export const getMaterials = async (req: Request, res: Response) => {
             SELECT m.*,
                 COALESCE(p.total_purchased, 0) AS total_purchased,
                 COALESCE(u.total_used, 0)      AS total_used,
-                COALESCE(p.total_purchased, 0) - COALESCE(u.total_used, 0) AS current_stock
+                -- purchases are stored in primary unit (e.g. cartons); multiply by conversion_factor to get base units
+                COALESCE(p.total_purchased, 0) * COALESCE(m.conversion_factor::numeric, 1)
+                    - COALESCE(u.total_used, 0) AS current_stock
             FROM materials m
             LEFT JOIN (
                 SELECT material_id, SUM(quantity) AS total_purchased

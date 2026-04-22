@@ -191,17 +191,6 @@ export function Materials() {
         } catch { toast('Failed to add material', 'error'); }
     };
 
-    // Stock is stored in base units (kg / pieces). Show with container count alongside.
-    const formatStock = (mat: any) => {
-        const stock = parseFloat(mat.current_stock || 0);
-        const cf    = parseFloat(mat.conversion_factor || 0);
-        const bu    = mat.base_unit || mat.unit;
-        if (isBagUnit(mat.unit) && cf > 0)
-            return `${stock.toFixed(2)} ${bu}  (≈${(stock / cf).toFixed(1)} bags)`;
-        if (isCartonUnit(mat.unit) && cf > 0)
-            return `${Math.round(stock)} ${bu}  (≈${(stock / cf).toFixed(1)} cartons)`;
-        return `${stock.toFixed(2)} ${mat.unit}`;
-    };
 
     const filtered = materials.filter(m => m.name.toLowerCase().includes(query.toLowerCase()));
 

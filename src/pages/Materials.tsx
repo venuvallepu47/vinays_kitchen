@@ -36,7 +36,14 @@ function PaymentModeChips({ value, onChange }: { value: string; onChange: (v: st
 
 const TODAY = today();
 const FALLBACK_UNITS = ['kg', 'g', 'ltr', 'ml', 'pieces', 'packets', 'bundles', 'dozens', 'Bags', 'Cartons'];
-type StockItem = { material_id: string; vendor_id: string; quantity: string; price_per_unit: string };
+type StockItem = {
+    material_id: string;
+    vendor_id: string;
+    quantity: string;
+    price_per_unit: string;
+    new_unit?: string;
+    new_conversion_factor?: string;
+};
 
 const isBagUnit    = (u?: string) => u?.toLowerCase() === 'bags'    || u?.toLowerCase() === 'bag';
 const isCartonUnit = (u?: string) => u?.toLowerCase() === 'cartons' || u?.toLowerCase() === 'carton';
@@ -97,16 +104,30 @@ export function Materials() {
         
         setSaving(true);
         try {
-            // Check for manual materials
+            // Resolve material IDs — create new materials with correct unit
             const items = await Promise.all(valid.map(async (it) => {
                 if (!isNaN(Number(it.material_id))) {
                     return { ...it, material_id: Number(it.material_id) };
                 }
-                const newMatRes = await api.post('/materials', {
-                    name: it.material_id,
-                    unit: 'units',
-                });
-                return { ...it, material_id: newMatRes.data.id };
+                const matName = String(it.material_id).trim();
+                const unitLower = (it.new_unit || 'kg').toLowerCase();
+                const baseUnit = unitLower.includes('bag') ? 'kg' : unitLower.includes('carton') ? 'units' : null;
+                try {
+                    const newMatRes = await api.post('/materials', {
+                        name: matName,
+                        unit: it.new_unit || 'kg',
+                        conversion_factor: it.new_conversion_factor ? parseFloat(it.new_conversion_factor) : null,
+                        base_unit: baseUnit,
+                    });
+                    return { ...it, material_id: newMatRes.data.id };
+                } catch {
+                    const allMats = await api.get('/materials');
+                    const existing = (allMats.data as any[]).find(
+                        (m: any) => m.name.toLowerCase() === matName.toLowerCase()
+                    );
+                    if (existing) return { ...it, material_id: existing.id };
+                    throw new Error(`Could not create or find material: ${matName}`);
+                }
             }));
 
             // Group items by vendor_id
@@ -311,12 +332,22 @@ export function Materials() {
                                 {stockItems.map((item, idx) => (
                                     <div key={idx} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                                         <div className="flex gap-2">
-                                            <Combobox 
+                                            <Combobox
                                                 className="flex-1"
                                                 options={materials}
                                                 value={item.material_id}
                                                 placeholder="Search Material..."
-                                                onChange={(val) => updateStockItem(idx, 'material_id', String(val))}
+                                                onChange={(val, isManual) => {
+                                                    if (isManual) {
+                                                        setStockItems(prev => prev.map((it, i) => i === idx
+                                                            ? { ...it, material_id: String(val), new_unit: 'kg', new_conversion_factor: '' }
+                                                            : it));
+                                                    } else {
+                                                        setStockItems(prev => prev.map((it, i) => i === idx
+                                                            ? { material_id: String(val), vendor_id: it.vendor_id, quantity: it.quantity, price_per_unit: it.price_per_unit }
+                                                            : it));
+                                                    }
+                                                }}
                                             />
                                             {stockItems.length > 1 && (
                                                 <button type="button" onClick={() => removeStockItem(idx)}
@@ -325,6 +356,53 @@ export function Materials() {
                                                 </button>
                                             )}
                                         </div>
+
+                                        {/* New material unit setup */}
+                                        {item.material_id && isNaN(Number(item.material_id)) && (
+                                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+                                                        <Plus size={11} strokeWidth={3} className="text-white" />
+                                                    </div>
+                                                    <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
+                                                        New Material — Set How It's Measured
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1.5 block px-1">Unit of Measurement *</label>
+                                                    <select
+                                                        required
+                                                        value={item.new_unit || 'kg'}
+                                                        onChange={e => setStockItems(prev => prev.map((it, i) => i === idx
+                                                            ? { ...it, new_unit: e.target.value, new_conversion_factor: '' }
+                                                            : it))}
+                                                        className="w-full h-12 px-4 bg-white border border-amber-300 rounded-2xl text-base font-black text-slate-900 focus:border-amber-500 outline-none shadow-sm"
+                                                    >
+                                                        {FALLBACK_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                                    </select>
+                                                </div>
+                                                {(item.new_unit?.toLowerCase().includes('bag') || item.new_unit?.toLowerCase().includes('carton')) && (
+                                                    <div>
+                                                        <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1.5 block px-1">
+                                                            {item.new_unit?.toLowerCase().includes('bag') ? 'KG per Bag *' : 'Units per Carton *'}
+                                                        </label>
+                                                        <input
+                                                            required
+                                                            type="number"
+                                                            min="0.01"
+                                                            step="0.01"
+                                                            placeholder={item.new_unit?.toLowerCase().includes('bag') ? 'e.g. 25' : 'e.g. 30'}
+                                                            value={item.new_conversion_factor || ''}
+                                                            onChange={e => setStockItems(prev => prev.map((it, i) => i === idx
+                                                                ? { ...it, new_conversion_factor: e.target.value }
+                                                                : it))}
+                                                            className="w-full h-12 px-4 bg-white border border-amber-300 rounded-2xl text-base font-black text-slate-900 focus:border-amber-500 outline-none shadow-sm"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
                                         <select value={item.vendor_id}
                                             onChange={e => updateStockItem(idx, 'vendor_id', e.target.value)}
                                             className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-base font-black text-slate-500 focus:shadow-md transition-all outline-none focus:border-primary-500 shadow-sm">
